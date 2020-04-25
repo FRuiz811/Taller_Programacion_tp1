@@ -23,39 +23,28 @@ int socket_destroy(socket_t* self) {
 
 int resolve_address(socket_t* self, struct addrinfo* hints, const char* host, const char* port){
 	struct addrinfo *results, *iter;
+	int val = 1;
 	int status = getaddrinfo(host, port, hints, &results);
-	if (status != 0){
-		printf("Error getaddrinfo\n");
+	if (status != 0)
 		return -1;
-	}
-
+	
 	for (iter = results; iter != NULL; iter = iter->ai_next) {
-		self->socket_fd = socket(iter->ai_family,iter->ai_socktype,iter->ai_protocol);
-		printf("%d\n", self->socket_fd);
-		if (self->socket_fd == -1){
-			printf("Error\n");
+		self->socket_fd = socket(iter->ai_family,iter->ai_socktype,0);
+		if (self->socket_fd == -1)
 			continue;
-		}
 		if(host == NULL) {
-			if (bind(self->socket_fd, iter->ai_addr, iter->ai_addrlen) == 0){
-				printf("Sever\n");
+			if (bind(self->socket_fd, iter->ai_addr, iter->ai_addrlen) == 0) {
+				setsockopt(self->socket_fd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val));
 				break; //se linkeo correctamenente
 			}
 		} else {
-			if(connect(self->socket_fd, iter->ai_addr, iter->ai_addrlen) != -1) {
-				printf("Conectado\n");
+			if(connect(self->socket_fd, iter->ai_addr, iter->ai_addrlen) != 1) 
 				break;
-			}
-			else{
-				printf("Connect fail\n");
-			}
 		} //Se conectó correctamente con el servidor
-		close(self->socket_fd);
+		socket_destroy(self);
 	}
-	if(iter == NULL){
-		printf("Iter NULL\n");
+	if(iter == NULL) 
 		return -1;
-	}
 
 	return 0;
 }
@@ -84,7 +73,6 @@ int socket_connect(socket_t* self, const char* host, const char* port) {
 	hints.ai_family = AF_INET; //IPv4	
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_flags = 0;
-	printf("Connect to resolve_address\n");
 	if (resolve_address(self, &hints, host, port) == -1)
 		return -1;
 	return 0;
@@ -96,4 +84,40 @@ int socket_accept(socket_t* self, socket_t* accepted_socket){
 		return -1;
 	accepted_socket->socket_fd = new_fd;
 	return 0;
+}
+
+int socket_send(socket_t* self, const char* buffer, size_t lenght) {
+	size_t sended_bytes = 0;
+	int result_send;
+	size_t remaining_bytes = lenght;
+	while(sended_bytes < lenght) {
+		result_send = send(self->socket_fd, &buffer[sended_bytes], remaining_bytes, MSG_NOSIGNAL);
+		if(result_send == -1)
+			return -1;
+		else if (result_send == 0)
+			return -1;	
+		sended_bytes += result_send;
+		remaining_bytes -= result_send;
+	}
+	return sended_bytes;
+}
+
+int socket_recv(socket_t* self, char* buffer, size_t lenght){
+	size_t received_bytes = 0;
+	int result_recv;
+	size_t remaining_bytes = lenght;
+	while(received_bytes < lenght) {
+		received_bytes = recv(self->socket_fd, &buffer[received_bytes], remaining_bytes, 0);
+		if(result_recv == -1)
+			return -1;
+		else if (result_recv == 0)
+			return -1;	
+		received_bytes += result_recv;
+		remaining_bytes -= result_recv;
+	}
+	return received_bytes;
+}
+
+int socket_shutdown(socket_t* self, int mode){
+	return shutdown(self->socket_fd, mode);
 }
