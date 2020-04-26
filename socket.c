@@ -21,7 +21,7 @@ int socket_destroy(socket_t* self) {
 	return closed;
 }
 
-int resolve_address(socket_t* self, struct addrinfo* hints, const char* host, const char* port){
+int resolve_address(socket_t* self, struct addrinfo* hints, const char* host, const char* port) {
 	struct addrinfo *results, *iter;
 	int val = 1;
 	int status = getaddrinfo(host, port, hints, &results);
@@ -102,7 +102,7 @@ int socket_send(socket_t* self, const char* buffer, size_t lenght) {
 	return sended_bytes;
 }
 
-int socket_recv(socket_t* self, char* buffer, size_t lenght){
+int socket_recv(socket_t* self, char* buffer, size_t lenght) {
 	size_t received_bytes = 0;
 	int result_recv;
 	size_t remaining_bytes = lenght;
@@ -118,6 +118,12 @@ int socket_recv(socket_t* self, char* buffer, size_t lenght){
 	return received_bytes;
 }
 
-int socket_shutdown(socket_t* self, int mode){
-	return shutdown(self->socket_fd, mode);
+int socket_shutdown(socket_t* self, int mode) {
+	return shutdown(self->socket_fd, mode); 
+}
+
+int socket_is_connected(socket_t* self) {
+	if (self->socket_fd == -1)
+		return 0;
+	return 1;
 }

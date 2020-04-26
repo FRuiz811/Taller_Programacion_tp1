@@ -48,4 +48,9 @@ int socket_recv(socket_t* self, char* buffer, size_t lenght);
 //Devuelve -1 en caso de error, 0 en caso de éxito.
 int socket_shutdown(socket_t* self, int mode);
 
+
+//Verifica que el socket esté conectado 
+//Si está conectado retorna true, en caso contrario false.
+int socket_is_connected(socket_t* self);
+
 #endif
