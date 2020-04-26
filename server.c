@@ -1,5 +1,6 @@
 #include "server.h"
 #include <stdio.h>
+#include <sys/socket.h>
 
 #define SOCKET_WAITING 20
 
@@ -21,8 +22,15 @@ int server_connect_to(server_t* self, const char* port) {
 	return connection_success;
 }
 
+int server_run(server_t* self, const char* argv[]) {
+	if(server_connect_to(self, argv[1]) == -1)
+		return -1;
+	while(true){
+		
+	}
+}
 
-int server_send_message(server_t* self, const char* buffer, size_t lenght) {
+int server_recv_message(server_t* self, char* buffer, size_t lenght) {
 	
 }
 

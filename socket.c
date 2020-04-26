@@ -45,7 +45,6 @@ int resolve_address(socket_t* self, struct addrinfo* hints, const char* host, co
 	}
 	if(iter == NULL) 
 		return -1;
-
 	return 0;
 }
 
@@ -90,6 +89,7 @@ int socket_send(socket_t* self, const char* buffer, size_t lenght) {
 	size_t sended_bytes = 0;
 	int result_send;
 	size_t remaining_bytes = lenght;
+
 	while(sended_bytes < lenght) {
 		result_send = send(self->socket_fd, &buffer[sended_bytes], remaining_bytes, MSG_NOSIGNAL);
 		if(result_send == -1)
