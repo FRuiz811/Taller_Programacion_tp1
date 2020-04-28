@@ -21,7 +21,7 @@ int socket_destroy(socket_t* self) {
 	return closed;
 }
 
-int resolve_address(socket_t* self, struct addrinfo* hints, const char* host, const char* port) {
+static int _resolve_address(socket_t* self, struct addrinfo* hints, const char* host, const char* port) {
 	struct addrinfo *results, *iter;
 	int val = 1;
 	int status = getaddrinfo(host, port, hints, &results);
@@ -45,6 +45,7 @@ int resolve_address(socket_t* self, struct addrinfo* hints, const char* host, co
 	}
 	if(iter == NULL) 
 		return -1;
+	freeaddrinfo(results);
 	return 0;
 }
 
@@ -56,7 +57,7 @@ int socket_bind_and_listen(socket_t* self, const char* port, size_t max_waiting)
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_flags = AI_PASSIVE;
 
-	if (resolve_address(self, &hints, NULL, port) == -1)
+	if (_resolve_address(self, &hints, NULL, port) == -1)
 		return -1;
 	
 	if (listen(self->socket_fd, max_waiting) == -1)
@@ -72,7 +73,7 @@ int socket_connect(socket_t* self, const char* host, const char* port) {
 	hints.ai_family = AF_INET; //IPv4	
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_flags = 0;
-	if (resolve_address(self, &hints, host, port) == -1)
+	if (_resolve_address(self, &hints, host, port) == -1)
 		return -1;
 	return 0;
 }
@@ -85,12 +86,12 @@ int socket_accept(socket_t* self, socket_t* accepted_socket){
 	return 0;
 }
 
-int socket_send(socket_t* self, const char* buffer, size_t lenght) {
+int socket_send(socket_t* self, const char* buffer, size_t length) {
 	size_t sended_bytes = 0;
 	int result_send;
-	size_t remaining_bytes = lenght;
+	size_t remaining_bytes = length;
 
-	while(sended_bytes < lenght) {
+	while(sended_bytes < length) {
 		result_send = send(self->socket_fd, &buffer[sended_bytes], remaining_bytes, MSG_NOSIGNAL);
 		if(result_send == -1)
 			return -1;
@@ -102,16 +103,14 @@ int socket_send(socket_t* self, const char* buffer, size_t lenght) {
 	return sended_bytes;
 }
 
-int socket_recv(socket_t* self, char* buffer, size_t lenght) {
+int socket_recv(socket_t* self, char* buffer, size_t length) {
 	size_t received_bytes = 0;
 	int result_recv;
-	size_t remaining_bytes = lenght;
-	while(received_bytes < lenght) {
-		received_bytes = recv(self->socket_fd, &buffer[received_bytes], remaining_bytes, 0);
-		if(result_recv == -1)
+	size_t remaining_bytes = length;
+	while(received_bytes < length) {
+		received_bytes = recv(self->socket_fd, &(buffer[received_bytes]), remaining_bytes, 0);
+		if(result_recv == -1 || result_recv == 0)
 			return -1;
-		else if (result_recv == 0)
-			return -1;	
 		received_bytes += result_recv;
 		remaining_bytes -= result_recv;
 	}

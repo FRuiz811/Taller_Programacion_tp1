@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <sys/socket.h>
 #include <string.h>
+#include <stdbool.h>
+#include "buffer_dinamico.h"
 
 #define BUFFER_SIZE 32
 
@@ -24,7 +26,7 @@ int client_connect_to(client_t* self, const char* host, const char* port) {
 	return connection_success;
 }
 
-int client_define_input(client_t* self,int argc, const char* argv[]){
+int client_define_input(client_t* self,int argc, const char* argv[]) {
 	if (argc == 3)
 		self->input = stdin;
 	else 
@@ -36,25 +38,63 @@ int client_define_input(client_t* self,int argc, const char* argv[]){
 	return 0;
 }
 
+static bool _is_msg_complete(buffer_t* line, char* buffer, int* position) {
+	char* end_line = memchr(buffer, '\n', BUFFER_SIZE);
+	int new_size;
+	bool completed;
+	if (end_line == NULL) {
+		buffer_concatenate(line, buffer, BUFFER_SIZE);
+		completed = false;
+	} else {
+		new_size = end_line - buffer;
+		*position = new_size;
+		buffer[new_size] = '\0';
+		buffer_concatenate(line, buffer, new_size + 1);
+		completed = true;
+	}
+	memset(buffer,0,BUFFER_SIZE);
+	return completed;
+}
+
+int client_file_process(client_t* self) {
+	char buffer[BUFFER_SIZE];
+	buffer_t *line = buffer_create(0);
+	bool msg_complete = false;
+	int new_size;
+	char rcv[4];
+	while (!feof(self->input)) {
+		if(msg_complete)
+			fseek(self->input, new_size+1-BUFFER_SIZE, SEEK_CUR);
+		fread(buffer, sizeof(char), BUFFER_SIZE, self->input);
+		msg_complete = _is_msg_complete(line, buffer, &new_size);
+		if(msg_complete){
+			//llamada protocolo
+			client_send_message(self, line->string, line->length);
+			client_recv_message(self,rcv,3);
+			printf("%s",rcv );
+			buffer_destroy(line);
+			line = buffer_create(0);
+		}
+	}
+	buffer_destroy(line);
+	return 0;
+}
+
 int client_run(client_t* self, int argc, const char* argv[]) {
 	if(client_define_input(self, argc, argv) == -1)
 		return -1; //No se pudo abrir el archivo input.
 	if(client_connect_to(self, argv[1],argv[2]) == -1)
 		return -1;
-	char buffer[BUFFER_SIZE];
-	int enviados = 0;	
-	while (!feof(self->input)){
-		fread(buffer, BUFFER_SIZE, 1, self->input);
-		printf("%s\n",buffer);
-		enviados = client_send_message(self,buffer,BUFFER_SIZE);
-		memset(buffer,0,BUFFER_SIZE);
-	}
-
+	client_file_process(self);
 	return 0;
 }
 
-int client_send_message(client_t* self, const char* buffer, size_t lenght) {
-	return socket_send(&(self->socket_client), buffer, lenght);
+int client_recv_message(client_t* self, char* buffer, size_t length) {
+	return socket_recv(&(self->socket_client), buffer, length);
+}
+
+int client_send_message(client_t* self, const char* buffer, size_t length) {
+	return socket_send(&(self->socket_client), buffer, length);
 }
 
 int client_close(client_t* self) {

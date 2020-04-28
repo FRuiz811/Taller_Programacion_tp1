@@ -3,7 +3,7 @@
 #include <stdlib.h>
 
 // TDA que representará al socket
-typedef struct{
+typedef struct socket {
 	int socket_fd;
 }socket_t;
 
@@ -30,24 +30,21 @@ int socket_connect(socket_t* self, const char* host, const char* port);
 //Devuelve -1 en caso de error, y 0 si se ha podido aceptar la conexión
 int socket_accept(socket_t* self, socket_t* accepted_socket);
 
-
-//Envía un stream que comienza en buffer de longitud lenght.
+//Envía un stream que comienza en buffer de longitud length.
 //En caso de error o que el socket esté cerrado, devuelve -1.
 //Caso contrario, devuelve la cantidad de bytes enviados.
-int socket_send(socket_t* self, const char* buffer, size_t lenght);
+int socket_send(socket_t* self, const char* buffer, size_t length);
 
-//Almacena en un buffer de longitud lenght todos los bytes
+//Almacena en un buffer de longitud length todos los bytes
 //recibidos en el socket self.
 //En caso de error o que el socket esté cerrado, devuelve -1.
 //Caso contrario, devuelve la cantidad de bytes recibidos.
-int socket_recv(socket_t* self, char* buffer, size_t lenght);
-
+int socket_recv(socket_t* self, char* buffer, size_t length);
 
 //Se realiza el shutdown del socket self, con el mode indicado.
 //mode: SHUT_WR, SHUT_RD, SHUT_RDWR
 //Devuelve -1 en caso de error, 0 en caso de éxito.
 int socket_shutdown(socket_t* self, int mode);
-
 
 //Verifica que el socket esté conectado 
 //Si está conectado retorna true, en caso contrario false.

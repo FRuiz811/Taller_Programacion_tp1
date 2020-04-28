@@ -1,8 +1,11 @@
 #include "server.h"
 #include <stdio.h>
 #include <sys/socket.h>
+#include <string.h>
 
 #define SOCKET_WAITING 20
+#define BUFFER_SIZE 32	
+#define MSG_RECV "OK\n"
 
 int server_create(server_t* self) {
 	socket_t socket;
@@ -22,16 +25,39 @@ int server_connect_to(server_t* self, const char* port) {
 	return connection_success;
 }
 
+int server_accept_connection(server_t* self) {
+	socket_t communicator;
+	socket_create(&communicator);
+	if (socket_accept(&(self->socket_server),&communicator) == -1) {
+		fprintf(stderr, "No se pudo aceptar ninguna nueva conexión\n");
+		return -1;
+	}
+	self->socket_communicator = communicator;
+	return 0;
+}
+
+
 int server_run(server_t* self, const char* argv[]) {
 	if(server_connect_to(self, argv[1]) == -1)
 		return -1;
-	while(true){
-		
+	if(server_accept_connection(self) == -1)
+		return -1;
+	char buffer[BUFFER_SIZE];
+	while(server_recv_message(self, buffer, BUFFER_SIZE) != -1) {
+		printf("Buffer recibido: %s\n", buffer);
+		memset(buffer,0,BUFFER_SIZE);
+		server_send_message(self, MSG_RECV, 3);
 	}
+
+	return 0;
 }
 
-int server_recv_message(server_t* self, char* buffer, size_t lenght) {
-	
+int server_send_message(server_t* self, const char* buffer, size_t length){
+	return socket_send(&(self->socket_communicator), buffer, length);
+}
+
+int server_recv_message(server_t* self, char* buffer, size_t length) {
+	return socket_recv(&(self->socket_communicator), buffer, length);
 }
 
 int server_close(server_t* self) {
