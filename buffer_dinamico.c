@@ -23,7 +23,7 @@ buffer_t* buffer_create(size_t length) {
 int buffer_concatenate(buffer_t* self, const void* data_to_add, size_t length) {
 	size_t previous_length = self->length;
 	size_t new_lenght = sizeof(char) * (length + previous_length);
-	void* new_data = realloc(self->data, new_lenght);	
+	char* new_data = realloc(self->data, new_lenght);	
 	
 	if (new_data == NULL)
 		return -1;

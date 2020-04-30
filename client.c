@@ -60,7 +60,7 @@ static bool _is_msg_complete(buffer_t* line, char* buffer, int* position) {
 		new_size = end_line - buffer;
 		*position = new_size;
 		buffer[new_size] = '\0';
-		buffer_concatenate(line, buffer, new_size);
+		buffer_concatenate(line, buffer, new_size+1);
 		completed = true;
 	}
 	memset(buffer,0,BUFFER_SIZE);
@@ -101,7 +101,7 @@ int client_run(client_t* self, int argc, const char* argv[]) {
 }
 
 int client_recv_message(client_t* self) {
-	char msg_recieve[4];
+	char msg_recieve[3];
 	protocol_t protocol = self->protocol;
 	if(socket_recv(&(self->socket_client), msg_recieve, 3) == -1)
 		return -1;

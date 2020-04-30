@@ -4,7 +4,7 @@
 #include <string.h>
 
 #define SOCKET_WAITING 20
-#define BUFFER_SIZE 12	
+#define BUFFER_SIZE 71	
 #define MSG_RECV "OK\n"
 
 int server_create(server_t* self) {

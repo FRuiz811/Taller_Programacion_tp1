@@ -3,7 +3,7 @@
 #include <stdlib.h>
 
 typedef struct buffer {
-	void* data;
+	char* data;
 	size_t length;
 }buffer_t;
 
