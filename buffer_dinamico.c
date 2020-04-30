@@ -22,13 +22,13 @@ buffer_t* buffer_create(size_t length) {
 
 int buffer_concatenate(buffer_t* self, const char* new_data, size_t length) {
 	size_t previous_length = self->length;
-	size_t new_lenght = sizeof(char) * (length + previous_length + 1);
+	size_t new_lenght = sizeof(char) * (length + previous_length);
 	char* new_string = realloc(self->string, new_lenght);	
 	
 	if (new_string == NULL)
 		return -1;
 
-	strncpy(&(new_string[previous_length]), new_data,length);
+	memcpy(&new_string[previous_length], new_data, length);
 	self->string = new_string;
 	self->length = length + previous_length;
 

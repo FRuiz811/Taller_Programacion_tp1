@@ -2,8 +2,6 @@
 #include "socket.h"
 #include <unistd.h>
 #include <string.h>
-#include <stdio.h>
-
 #include <netdb.h>
 #include <sys/socket.h>
 
@@ -21,11 +19,13 @@ int socket_destroy(socket_t* self) {
 	return closed;
 }
 
+//Resuelve la conexión con el host (si es indicado) y el puerto al cual el
+//soquet se conecta. El file descriptor que es utilizado queda almacenado
+//en el soquet self.
 static int _resolve_address(socket_t* self, struct addrinfo* hints, const char* host, const char* port) {
 	struct addrinfo *results, *iter;
 	int val = 1;
-	int status = getaddrinfo(host, port, hints, &results);
-	if (status != 0)
+	if (getaddrinfo(host, port, hints, &results) != 0)
 		return -1;
 	
 	for (iter = results; iter != NULL; iter = iter->ai_next) {
@@ -35,12 +35,12 @@ static int _resolve_address(socket_t* self, struct addrinfo* hints, const char* 
 		if(host == NULL) {
 			if (bind(self->socket_fd, iter->ai_addr, iter->ai_addrlen) == 0) {
 				setsockopt(self->socket_fd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val));
-				break; //se linkeo correctamenente
+				break;
 			}
 		} else {
-			if(connect(self->socket_fd, iter->ai_addr, iter->ai_addrlen) != 1) 
+			if(connect(self->socket_fd, iter->ai_addr, iter->ai_addrlen) != -1) 
 				break;
-		} //Se conectó correctamente con el servidor
+		}
 		socket_destroy(self);
 	}
 	if(iter == NULL) 
@@ -93,10 +93,8 @@ int socket_send(socket_t* self, const char* buffer, size_t length) {
 
 	while(sended_bytes < length) {
 		result_send = send(self->socket_fd, &buffer[sended_bytes], remaining_bytes, MSG_NOSIGNAL);
-		if(result_send == -1)
-			return -1;
-		else if (result_send == 0)
-			return -1;	
+		if(result_send == -1 || result_send == 0)
+			return result_send;
 		sended_bytes += result_send;
 		remaining_bytes -= result_send;
 	}
@@ -108,17 +106,17 @@ int socket_recv(socket_t* self, char* buffer, size_t length) {
 	int result_recv;
 	size_t remaining_bytes = length;
 	while(received_bytes < length) {
-		received_bytes = recv(self->socket_fd, &(buffer[received_bytes]), remaining_bytes, 0);
+		result_recv = recv(self->socket_fd, &buffer[received_bytes], remaining_bytes, 0);
 		if(result_recv == -1 || result_recv == 0)
-			return -1;
+			return result_recv;
 		received_bytes += result_recv;
 		remaining_bytes -= result_recv;
 	}
 	return received_bytes;
 }
 
-int socket_shutdown(socket_t* self, int mode) {
-	return shutdown(self->socket_fd, mode); 
+int socket_shutdown(socket_t* self, int channel) {
+	return shutdown(self->socket_fd, channel); 
 }
 
 int socket_is_connected(socket_t* self) {

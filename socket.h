@@ -2,7 +2,7 @@
 #define SOCKET_H
 #include <stdlib.h>
 
-// TDA que representará al socket
+// TDA que representa al socket
 typedef struct socket {
 	int socket_fd;
 }socket_t;
@@ -25,29 +25,29 @@ int socket_bind_and_listen(socket_t* self, const char* port, size_t max_waiting)
 //Retorna 0 en caso de que la conexión sea exitosa, -1 en caso de error
 int socket_connect(socket_t* self, const char* host, const char* port);
 
-//Retorna en accepted_socket, el socket que permitirá la
+//Retorna en accepted_socket, un socket inicializado que permitirá la
 //comunicación con el cliente.
-//Devuelve -1 en caso de error, y 0 si se ha podido aceptar la conexión
+//Devuelve -1 en caso de error, y 0 si se ha podido aceptar la conexión.
 int socket_accept(socket_t* self, socket_t* accepted_socket);
 
 //Envía un stream que comienza en buffer de longitud length.
-//En caso de error o que el socket esté cerrado, devuelve -1.
+//En caso de error devuelve -1. Si el socket está cerrado devuelve 0.
 //Caso contrario, devuelve la cantidad de bytes enviados.
 int socket_send(socket_t* self, const char* buffer, size_t length);
 
 //Almacena en un buffer de longitud length todos los bytes
 //recibidos en el socket self.
-//En caso de error o que el socket esté cerrado, devuelve -1.
+//En caso de error devuelve -1. Si el socket está cerrado devuelve 0.
 //Caso contrario, devuelve la cantidad de bytes recibidos.
 int socket_recv(socket_t* self, char* buffer, size_t length);
 
-//Se realiza el shutdown del socket self, con el mode indicado.
-//mode: SHUT_WR, SHUT_RD, SHUT_RDWR
-//Devuelve -1 en caso de error, 0 en caso de éxito.
-int socket_shutdown(socket_t* self, int mode);
 
-//Verifica que el socket esté conectado 
-//Si está conectado retorna true, en caso contrario false.
+//channel: SHUT_WR, SHUT_RD, SHUT_RDWR
+//Devuelve -1 en caso de error, 0 en caso de éxito.
+int socket_shutdown(socket_t* self, int channel);
+
+
+//Si está conectado retorna 1, en caso contrario 0.
 int socket_is_connected(socket_t* self);
 
 #endif

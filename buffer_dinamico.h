@@ -9,7 +9,7 @@ typedef struct buffer {
 
 
 //Alloca en memoria un buffer de tamaño length y devuelve
-//un puntero al struct buffer_t*
+//un puntero al struct buffer_t.
 buffer_t* buffer_create(size_t length);
 
 //Concatena al buffer self, el string ubicado en new_data de longitud length
@@ -17,7 +17,7 @@ buffer_t* buffer_create(size_t length);
 //devuelve -1 en caso de error.
 int buffer_concatenate(buffer_t* self, const char* new_data, size_t length);
 
-//Se encarga de liberar la memoria reservada para el struct buffer_t
+
 void buffer_destroy(buffer_t* self);
 
 #endif

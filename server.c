@@ -4,7 +4,7 @@
 #include <string.h>
 
 #define SOCKET_WAITING 20
-#define BUFFER_SIZE 32	
+#define BUFFER_SIZE 12	
 #define MSG_RECV "OK\n"
 
 int server_create(server_t* self) {
@@ -19,7 +19,7 @@ int server_is_already_connected(server_t* self) {
 }
 
 int server_connect_to(server_t* self, const char* port) {
-	if(server_is_already_connected(self))
+	if (server_is_already_connected(self))
 		return -1;
 	int connection_success = socket_bind_and_listen(&(self->socket_server), port, SOCKET_WAITING);
 	return connection_success;
@@ -38,12 +38,12 @@ int server_accept_connection(server_t* self) {
 
 
 int server_run(server_t* self, const char* argv[]) {
-	if(server_connect_to(self, argv[1]) == -1)
+	if (server_connect_to(self, argv[1]) == -1)
 		return -1;
-	if(server_accept_connection(self) == -1)
+	if (server_accept_connection(self) == -1)
 		return -1;
 	char buffer[BUFFER_SIZE];
-	while(server_recv_message(self, buffer, BUFFER_SIZE) != -1) {
+	while (server_recv_message(self, buffer, BUFFER_SIZE) > 0) {
 		printf("Buffer recibido: %s\n", buffer);
 		memset(buffer,0,BUFFER_SIZE);
 		server_send_message(self, MSG_RECV, 3);
@@ -62,7 +62,7 @@ int server_recv_message(server_t* self, char* buffer, size_t length) {
 
 int server_close(server_t* self) {
 	socket_shutdown(&(self->socket_server), SHUT_RDWR);
-	if(socket_destroy(&(self->socket_server)) == -1) 
+	if (socket_destroy(&(self->socket_server)) == -1) 
 		return -1;
 	return 0;
 }
