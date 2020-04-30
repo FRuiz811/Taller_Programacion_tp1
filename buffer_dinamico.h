@@ -3,7 +3,7 @@
 #include <stdlib.h>
 
 typedef struct buffer {
-	char* string;
+	void* data;
 	size_t length;
 }buffer_t;
 
@@ -12,11 +12,15 @@ typedef struct buffer {
 //un puntero al struct buffer_t.
 buffer_t* buffer_create(size_t length);
 
-//Concatena al buffer self, el string ubicado en new_data de longitud length
+//Concatena al buffer self, los bytes ubicado en data_to_add de longitud length
 //Devuelve 0 en caso de que se haya podido concatenar todo correctamente o 
 //devuelve -1 en caso de error.
-int buffer_concatenate(buffer_t* self, const char* new_data, size_t length);
+int buffer_concatenate(buffer_t* self, const void* data_to_add, size_t length);
 
+
+size_t buffer_get_length(buffer_t* self);
+
+void* buffer_get_data(buffer_t* self);
 
 void buffer_destroy(buffer_t* self);
 

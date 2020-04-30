@@ -78,9 +78,10 @@ int client_process_file(client_t* self) {
 		fread(buffer, sizeof(char), BUFFER_SIZE, self->input);
 		msg_complete = _is_msg_complete(line, buffer, &new_size);
 		if (msg_complete) {
-			protocol_encode_message(&(self->protocol), line->string, line->length);
+			protocol_encode_message(&(self->protocol), line->data, line->length);
 			buffer_t* encoder = self->protocol.buffer;
-			client_send_message(self, encoder->string, encoder->length);
+			void* data = buffer_get_data(encoder);
+			client_send_message(self, data, encoder->length);
 			client_recv_message(self);
 			buffer_destroy(line);
 			line = buffer_create(0);
@@ -104,11 +105,11 @@ int client_recv_message(client_t* self) {
 	protocol_t protocol = self->protocol;
 	if(socket_recv(&(self->socket_client), msg_recieve, 3) == -1)
 		return -1;
-	printf("0x%4lx: %s",protocol.id, msg_recieve);
+	printf("0x%08lx: %s",protocol.id, msg_recieve);
 	return 0;
 }
 
-int client_send_message(client_t* self, const char* buffer, size_t length) {
+int client_send_message(client_t* self, const void* buffer, size_t length) {
 	return socket_send(&(self->socket_client), buffer, length);
 }
 

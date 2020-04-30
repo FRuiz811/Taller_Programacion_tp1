@@ -11,9 +11,9 @@ typedef struct protocol {
 
 int protocol_create(protocol_t* self);
 
-void protocol_encode_message(protocol_t* self, char* message, size_t length);
+int protocol_encode_message(protocol_t* self, char* message, size_t length);
 
-char* protocol_decode_message(protocol_t* self, char* message, size_t length);
+int protocol_decode_message(protocol_t* self, char* message, size_t length);
 
 uint32_t protocol_id_message(protocol_t* self);
 

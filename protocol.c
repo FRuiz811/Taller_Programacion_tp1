@@ -50,73 +50,59 @@ static char* _change_endianness(uint32_t value){
 	return endianness;
 }
 
-static char* _encode_message(char* message, uint32_t length, char data_type, uint8_t parameter_type) {
-	char* endianness, *message_encoded;
-	if (!_is_littlendian())  
-		endianness = _change_endianness(length);
-	else
-		endianness = (char*) &length;
-	uint32_t encode_length = length + sizeof(uint32_t) + 2 + 1 + 1;
-	char encode[encode_length];
-	encode[0] = parameter_type;
-	encode[1] = 0x01;
-	encode[2] = data_type;
-	memset(&encode[3], 0, 1);
-	memcpy(&encode[4], endianness, sizeof(uint32_t));
-	message[length] = '\0';
-	memcpy(&encode[8], message, length +1);
-	message_encoded = encode;
-	return message_encoded;
-}	
-
-
-static void _destiny_encode(protocol_t* self, char* message, uint32_t length) {
-	//char *message_encoded = _encode_message(message, length, 's', 0x06);
-	//size_t new_length = length + sizeof(uint32_t) + 2 + 1 + 1;
+static int _encoding_message(protocol_t* self, char* message, uint32_t length, char data_type, uint8_t parameter_type) {
 	char* endianness;
 	if (!_is_littlendian())  
 		endianness = _change_endianness(length);
 	else
 		endianness = (char*) &length;
-	uint32_t encode_length = length + sizeof(uint32_t) + 2 + 1 + 1 + 1;
-	char encode[encode_length];
-	encode[0] = 0x06;
-	encode[1] = 0x01;
-	encode[2] = 's';
-	memset(&encode[3], 0, 1);
-	memcpy(&encode[4], endianness, sizeof(uint32_t));
+	uint32_t encoding_length = length + 1 + sizeof(uint32_t) + 2 + 1 + 1;
+	char encoding[encoding_length];
+	encoding[0] = parameter_type;
+	encoding[1] = 0x01;
+	encoding[2] = data_type;
+	memset(&encoding[3], 0, 1);
+	memcpy(&encoding[4], endianness, sizeof(uint32_t));
 	message[length] = '\0';
-	memcpy(&encode[8], message, length+1);
-	buffer_concatenate(self->buffer, encode, encode_length);
-	return;
+	memcpy(&encoding[8], message, length+1);
+	return buffer_concatenate(self->buffer, encoding, encoding_length);
 }
 
-static void _path_encode(char* encode, char* message, uint32_t length) {
+static int _destiny_encode(protocol_t* self, char* message, uint32_t length) {
+	uint8_t parameter_type = 0x06;
+	char data_type = 's';
+	int result =_encoding_message(self,message,length,data_type,parameter_type);
+	return result;
+}
+
+
+static int _path_encode(protocol_t* self, char* message, uint32_t length) {
 	uint8_t parameter_type = 0x01;
 	char data_type = 'o';
-	encode = _encode_message(message,length,'o', 0x01);
-	return;
+	int result =_encoding_message(self,message,length,data_type,parameter_type);
+	return result;
 }
 
-static void _interface_encode(char* encode, char* message, uint32_t length) {
+static int _interface_encode(protocol_t* self, char* message, uint32_t length) {
 	uint8_t parameter_type = 0x02;
 	char data_type = 's';
-	encode = _encode_message(message,length,'s',0x02);
-	return;
+	int result =_encoding_message(self,message,length,data_type,parameter_type);
+	return result;
 }
 
-static void _method_encode(char* encode, char* message, uint32_t length) {
+static int _method_encode(protocol_t* self, char* message, uint32_t length) {
 	uint8_t parameter_type = 0x03;
 	char data_type = 's';
+	int method_length = length;
 	char* limit_method = strchr(message, '(');
 	if (limit_method != NULL) {
-
+		method_length = limit_method - message;
 	}
-	encode = _encode_message(message,length,'s',0x03);
-	return;
+	int result = _encoding_message(self,message,method_length,data_type,parameter_type);
+	return result;
 }
 
-static void _build_header(protocol_t* self){
+static int _build_header(protocol_t* self){
 	char* endianness, header[16];
 	header[0] = 'l';
 	header[1] = 0x01;
@@ -130,31 +116,63 @@ static void _build_header(protocol_t* self){
 		endianness = (char*) &self->id;
 	memcpy(&header[8],endianness,4);
 	memset(&header[12], 0, 4);
-	buffer_concatenate(self->buffer, header, 16);
-	return;	
+	return buffer_concatenate(self->buffer, header, 16);	
 }
 
-void protocol_encode_message(protocol_t* self, char* message, size_t length) {
+static int _aligment(protocol_t* self) {
+	buffer_t* aux = self->buffer;
+	int mod = aux->length % 8;
+	if (mod != 0) {
+		int padding = 8 - mod; 
+		uint8_t zeros[padding];
+		memset(&zeros, 0, padding);
+		return buffer_concatenate(self->buffer, zeros, padding);
+	}
+	return 0;
+}
+
+static int _set_array_lenght(protocol_t* self) {
+	size_t array_length;
+	void* data = buffer_get_data(self->buffer);
+	array_length = buffer_get_length(self->buffer) - 16;
+	if (!_is_littlendian())  
+		endianness = _change_endianness(array_length);
+	else
+		endianness = (char*) &array_length;
+	memcpy(&(data+8),endianness,4);
+	return 0;
+
+}
+
+int protocol_encode_message(protocol_t* self, char* message, size_t length) {
 	protocol_restart(self);
 	char *message_splited = strtok(message, " ");
 	int argument = 0;
-	char *destiny, *path, *interface, *method;
-	_build_header(self);
+	int error,array_length;
+	error = _build_header(self);
+	if(error != 0)
+		return -1;
 	while (message_splited != NULL) {
 		argument += 1;
 		switch (argument) {
 			case 1:
-				_destiny_encode(self, message_splited, strlen(message_splited));
-			/*case 2:
-				destiny =_path_encode(path, message_splited, strlen(message_splited));
+				error =_destiny_encode(self, message_splited, strlen(message_splited));
+				_aligment(self);
+			case 2:
+				error = _path_encode(self, message_splited, strlen(message_splited));
+				_aligment(self);
 			case 3:
-				_interface_encode(interface, message_splited, strlen(message_splited));
+				error = _interface_encode(self, message_splited, strlen(message_splited));
+				_aligment(self);
 			case 4:
-				_method_encode(method, message_splited, strlen(message_splited));*/
+				error = _method_encode(self, message_splited, strlen(message_splited));
+				_aligment(self);
 		}
+		if (error != 0)
+			return -1;
 		message_splited = strtok(NULL, " ");
 	}
-	return;
+	return 0;
 }
 
 void protocol_destory(protocol_t* self) {
