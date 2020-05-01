@@ -11,9 +11,8 @@
 
 int client_create(client_t* self) {
 	protocol_t protocol;
-	if (protocol_create(&protocol) == -1) {
+	if (protocol_create(&protocol) == -1)
 		return -1;
-	}
 	self->protocol = protocol;
 
 	socket_t socket;
@@ -79,9 +78,14 @@ int client_process_file(client_t* self) {
 		msg_complete = _is_msg_complete(line, buffer, &new_size);
 		if (msg_complete) {
 			protocol_encode_message(&(self->protocol), line->data, line->length);
-			buffer_t* encoder = self->protocol.buffer;
-			void* data = buffer_get_data(encoder);
-			client_send_message(self, data, encoder->length);
+			buffer_t* header = self->protocol.header;
+			void* data = buffer_get_data(header);
+			client_send_message(self, data, header->length);
+			buffer_t* body = self->protocol.body;
+			if(body->length != 0){
+				data = buffer_get_data(body);
+				client_send_message(self, data, body->length);
+			}
 			client_recv_message(self);
 			buffer_destroy(line);
 			line = buffer_create(0);
@@ -114,6 +118,7 @@ int client_send_message(client_t* self, const void* buffer, size_t length) {
 }
 
 int client_close(client_t* self) {
+	protocol_destory(&(self->protocol));
 	socket_shutdown(&(self->socket_client), SHUT_RDWR);
 	fclose(self->input);
 	if (socket_destroy(&(self->socket_client)) == -1) 

@@ -11,6 +11,12 @@ int server_create(server_t* self) {
 	socket_t socket;
 	socket_create(&socket);
 	self->socket_server = socket;
+	self->socket_communicator = NULL;
+	
+	protocol_t protocol;
+	if (protocol_create(&protocol) == -1)
+		return -1;
+	self->protocol = protocol;
 	return 0;
 }
 

@@ -2,10 +2,12 @@
 #define SERVER_H
 #include <stdio.h>
 #include "socket.h"
+#include "protocol.h"
 
 typedef struct server {
 	socket_t socket_server;
 	socket_t socket_communicator;
+	protocol_t protocol;
 }server_t;
 
 int server_create(server_t* self);

@@ -25,8 +25,10 @@ int socket_destroy(socket_t* self) {
 static int _resolve_address(socket_t* self, struct addrinfo* hints, const char* host, const char* port) {
 	struct addrinfo *results, *iter;
 	int val = 1;
-	if (getaddrinfo(host, port, hints, &results) != 0)
+	if (getaddrinfo(host, port, hints, &results) != 0) {
+		freeaddrinfo(results);
 		return -1;
+	}
 	
 	for (iter = results; iter != NULL; iter = iter->ai_next) {
 		self->socket_fd = socket(iter->ai_family,iter->ai_socktype,0);
@@ -43,9 +45,9 @@ static int _resolve_address(socket_t* self, struct addrinfo* hints, const char* 
 		}
 		socket_destroy(self);
 	}
+	freeaddrinfo(results);
 	if(iter == NULL) 
 		return -1;
-	freeaddrinfo(results);
 	return 0;
 }
 

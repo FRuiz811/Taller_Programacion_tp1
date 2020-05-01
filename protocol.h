@@ -6,7 +6,8 @@
 
 typedef struct protocol {
 	size_t id;
-	buffer_t* buffer;
+	buffer_t* header;
+	buffer_t* body;
 }protocol_t;
 
 int protocol_create(protocol_t* self);
