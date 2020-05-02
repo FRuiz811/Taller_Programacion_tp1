@@ -33,13 +33,13 @@ int socket_accept(socket_t* self, socket_t* accepted_socket);
 //Envía un stream que comienza en buffer de longitud length.
 //En caso de error devuelve -1. Si el socket está cerrado devuelve 0.
 //Caso contrario, devuelve la cantidad de bytes enviados.
-int socket_send(socket_t* self, const char* buffer, size_t length);
+int socket_send(socket_t* self, const void* buffer, size_t length);
 
 //Almacena en un buffer de longitud length todos los bytes
 //recibidos en el socket self.
 //En caso de error devuelve -1. Si el socket está cerrado devuelve 0.
 //Caso contrario, devuelve la cantidad de bytes recibidos.
-int socket_recv(socket_t* self, char* buffer, size_t length);
+int socket_recv(socket_t* self, void* buffer, size_t length);
 
 
 //channel: SHUT_WR, SHUT_RD, SHUT_RDWR

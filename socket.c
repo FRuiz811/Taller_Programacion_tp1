@@ -88,13 +88,13 @@ int socket_accept(socket_t* self, socket_t* accepted_socket){
 	return 0;
 }
 
-int socket_send(socket_t* self, const char* buffer, size_t length) {
+int socket_send(socket_t* self, const void* buffer, size_t length) {
 	size_t sended_bytes = 0;
 	int result_send;
 	size_t remaining_bytes = length;
-
+	const char* char_buffer = buffer;
 	while(sended_bytes < length) {
-		result_send = send(self->socket_fd, &buffer[sended_bytes], remaining_bytes, MSG_NOSIGNAL);
+		result_send = send(self->socket_fd, &char_buffer[sended_bytes], remaining_bytes, MSG_NOSIGNAL);
 		if(result_send == -1 || result_send == 0)
 			return result_send;
 		sended_bytes += result_send;
@@ -103,12 +103,13 @@ int socket_send(socket_t* self, const char* buffer, size_t length) {
 	return sended_bytes;
 }
 
-int socket_recv(socket_t* self, char* buffer, size_t length) {
+int socket_recv(socket_t* self, void* buffer, size_t length) {
 	size_t received_bytes = 0;
 	int result_recv;
 	size_t remaining_bytes = length;
+	char* char_buffer = buffer;
 	while(received_bytes < length) {
-		result_recv = recv(self->socket_fd, &buffer[received_bytes], remaining_bytes, 0);
+		result_recv = recv(self->socket_fd, &char_buffer[received_bytes], remaining_bytes, 0);
 		if(result_recv == -1 || result_recv == 0)
 			return result_recv;
 		received_bytes += result_recv;

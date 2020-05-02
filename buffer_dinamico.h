@@ -17,7 +17,6 @@ buffer_t* buffer_create(size_t length);
 //devuelve -1 en caso de error.
 int buffer_concatenate(buffer_t* self, const void* data_to_add, size_t length);
 
-
 size_t buffer_get_length(buffer_t* self);
 
 void* buffer_get_data(buffer_t* self);
