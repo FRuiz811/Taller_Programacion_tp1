@@ -1,5 +1,5 @@
 #define _POSIX_C_SOURCE 201112L	
-#include "socket.h"
+#include "common_socket.h"
 #include <unistd.h>
 #include <string.h>
 #include <netdb.h>

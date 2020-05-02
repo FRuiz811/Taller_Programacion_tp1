@@ -1,8 +1,8 @@
 #ifndef SERVER_H
 #define SERVER_H
 #include <stdio.h>
-#include "socket.h"
-#include "protocol.h"
+#include "common_socket.h"
+#include "common_protocol.h"
 
 typedef struct server {
 	socket_t socket_server;

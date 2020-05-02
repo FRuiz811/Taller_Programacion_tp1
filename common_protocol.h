@@ -1,11 +1,11 @@
-#ifndef PROTOCOL_H
-#define PROTOCOL_H
+#ifndef COMMON_PROTOCOL_H
+#define COMMON_PROTOCOL_H
 #include <stdio.h>
 #include <stdint.h>
-#include "buffer_dinamico.h"
+#include "common_buffer_dinamico.h"
 
 typedef struct protocol {
-	size_t id;
+	uint32_t id;
 	buffer_t* header;
 	buffer_t* body;
 }protocol_t;

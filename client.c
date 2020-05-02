@@ -3,7 +3,7 @@
 #include <sys/socket.h>
 #include <string.h>
 #include <stdbool.h>
-#include "buffer_dinamico.h"
+#include "common_buffer_dinamico.h"
 #include <stdint.h>
 
 
@@ -58,7 +58,9 @@ static int _is_msg_complete(buffer_t* line, char* buffer, int length, int* posit
 	} else {
 		new_size = end_line - buffer;
 		*position = new_size;
-		check_another_msg = strpbrk(&buffer[new_size+1], "\n\0");
+		printf("Length %d\n",length);
+		printf("new_size+1: %d\n",new_size+1);
+		check_another_msg = memchr(&buffer[new_size], '\n', length);
 		if (check_another_msg != NULL)
 			completed += 1;
 		buffer[new_size] = '\0';
@@ -114,7 +116,7 @@ int client_recv_message(client_t* self) {
 	protocol_t protocol = self->protocol;
 	if(socket_recv(&(self->socket_client), msg_recieve, 3) == -1)
 		return -1;
-	printf("0x%08lx: %s",protocol.id, msg_recieve);
+	printf("0x%08x: %s",protocol.id, msg_recieve);
 	return 0;
 }
 

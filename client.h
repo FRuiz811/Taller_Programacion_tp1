@@ -1,8 +1,8 @@
 #ifndef CLIENT_H
 #define CLIENT_H
 #include <stdio.h>
-#include "socket.h"
-#include "protocol.h"
+#include "common_socket.h"
+#include "common_protocol.h"
 
 typedef struct client {
 	socket_t socket_client;

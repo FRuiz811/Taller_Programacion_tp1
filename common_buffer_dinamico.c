@@ -1,4 +1,4 @@
-#include "buffer_dinamico.h"
+#include "common_buffer_dinamico.h"
 #include <string.h>
 #include <stdio.h>
 

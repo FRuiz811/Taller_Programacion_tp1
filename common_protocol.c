@@ -1,6 +1,6 @@
-#include "protocol.h"
+#include "common_protocol.h"
 #include <string.h>
-#include "buffer_dinamico.h"
+#include "common_buffer_dinamico.h"
 
 int protocol_create(protocol_t* self) {
 	self->header = buffer_create(0);
@@ -47,7 +47,7 @@ static int _is_littlendian() {
 //este nuevo endianness
 static uint8_t* _change_endianness(uint32_t value){
 	uint8_t *temp;
-	uint8_t *endianness;
+	uint8_t *endianness = {0};
 	temp = (uint8_t*) &value;
 	int j = 0;
 	for (int i = sizeof(uint32_t) -1 ; i >= 0; i--) {
@@ -84,8 +84,7 @@ static void _split_method_parameters(char* string_to_split, uint32_t length, cha
 		*method = string_to_split;
 		return;
 	}
-	*limit_method = '\0';
-	*limit_method++;
+	*limit_method++ = '\0';
 	*parameters = limit_method;
 	string_to_split[length] = '\0';
 	*method = string_to_split;
@@ -170,7 +169,7 @@ static int _parameters_encode(protocol_t* self, char* parameters, uint32_t lengt
 	}
 	encoding[j] = '\0';
 	int result =_encoding_header(self,encoding,j,data_type,parameter_type);
-	return 0;
+	return result;
 }
 
 static int _build_header(protocol_t* self){

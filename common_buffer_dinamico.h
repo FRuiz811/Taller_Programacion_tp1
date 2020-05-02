@@ -1,5 +1,5 @@
-#ifndef BUFFER_DINAMICO_H
-#define BUFFER_DINAMICO_H
+#ifndef COMMON_BUFFER_DINAMICO_H
+#define COMMON_BUFFER_DINAMICO_H
 #include <stdlib.h>
 
 typedef struct buffer {
