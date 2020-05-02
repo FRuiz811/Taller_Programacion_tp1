@@ -48,34 +48,37 @@ int client_define_input(client_t* self,int argc, const char* argv[]) {
 	return 0;
 }
 
-static bool _is_msg_complete(buffer_t* line, char* buffer, int* position) {
-	char* end_line = memchr(buffer, '\n', BUFFER_SIZE);
+static int _is_msg_complete(buffer_t* line, char* buffer, int length, int* position) {
+	char* end_line = memchr(buffer, '\n', length);
 	int new_size;
-	bool completed;
+	char* check_another_msg;
+	int completed = 0;
 	if (end_line == NULL) {
-		buffer_concatenate(line, buffer, BUFFER_SIZE);
-		completed = false;
+		buffer_concatenate(line, buffer, length);
 	} else {
 		new_size = end_line - buffer;
 		*position = new_size;
+		check_another_msg = strpbrk(&buffer[new_size+1], "\n\0");
+		if (check_another_msg != NULL)
+			completed += 1;
 		buffer[new_size] = '\0';
 		buffer_concatenate(line, buffer, new_size+1);
-		completed = true;
+		completed += 1;
 	}
-	memset(buffer,0,BUFFER_SIZE);
+	memset(buffer,0,length);
 	return completed;
 }
 
 int client_process_file(client_t* self) {
 	char buffer[BUFFER_SIZE];
 	buffer_t *line = buffer_create(0);
-	bool msg_complete = false;
+	int msg_complete = 0;
 	int new_size;
 	while (!feof(self->input)) {
 		if (msg_complete)
 			fseek(self->input, new_size+1-BUFFER_SIZE, SEEK_CUR);
-		fread(buffer, sizeof(char), BUFFER_SIZE, self->input);
-		msg_complete = _is_msg_complete(line, buffer, &new_size);
+		int buffer_read = fread(buffer, sizeof(char), BUFFER_SIZE, self->input);
+		msg_complete = _is_msg_complete(line, buffer, buffer_read, &new_size);
 		if (msg_complete) {
 			protocol_encode_message(&(self->protocol), line->data, line->length);
 			buffer_destroy(line);
@@ -87,6 +90,10 @@ int client_process_file(client_t* self) {
 			client_recv_message(self);
 			buffer_destroy(line);
 			line = buffer_create(0);
+		}
+		if (msg_complete > 1){
+			fseek(self->input, new_size+1-buffer_read, SEEK_CUR);
+			msg_complete = 0;
 		}
 	}
 	buffer_destroy(line);

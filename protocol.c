@@ -250,7 +250,7 @@ int protocol_encode_message(protocol_t* self, char* message, size_t length) {
 			case 3 :
 				_split_method_parameters(message_splited[i],strlen(message_splited[i]), &method, &parameters);
 				error = _method_encode(self, method, strlen(method));
-				if (parameters != NULL) {
+				if (*parameters != '\0') {
 					_aligment(self);
 					error = _parameters_encode(self, parameters, strlen(parameters));
 				}
@@ -258,9 +258,8 @@ int protocol_encode_message(protocol_t* self, char* message, size_t length) {
 				break;
 		}
 		_aligment(self);
-		if (parameters != NULL) {
+		if (parameters !=  NULL && *parameters != '\0') 
 			_build_body(self, parameters, strlen(parameters));
-		}
 		i++;
 		if (error != 0)
 			return -1;

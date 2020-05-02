@@ -1,3 +1,0 @@
-taller.hellodbus /taller/greeter taller.Dbus.Greeter printHello(Hola!)
-prueba.hellodbus /Fran/tp1 prueba.Dbus.tp1 sayGoodBye(Bye!,Mundo)
-dest path interface method
