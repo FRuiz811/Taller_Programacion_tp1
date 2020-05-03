@@ -22,7 +22,7 @@ int client_define_input(client_t* self,int argc, const char* argv[]);
 
 int client_process_file(client_t* self);
 
-int client_send_message(client_t* self, const void* buffer, size_t length);
+int client_send_message(client_t* self, const uint8_t* buffer, uint32_t length);
 
 int client_recv_message(client_t* self);
  

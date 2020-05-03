@@ -54,7 +54,7 @@ static int _resolve_address(socket_t* self, struct addrinfo* hints,
 }
 
 int socket_bind_and_listen(socket_t* self, const char* port, 
-						   size_t max_waiting) {
+						   uint32_t max_waiting) {
 	struct addrinfo hints;
 
 	memset(&hints, 0, sizeof(struct addrinfo));
@@ -91,10 +91,10 @@ int socket_accept(socket_t* self, socket_t* accepted_socket){
 	return 0;
 }
 
-int socket_send(socket_t* self, const void* buffer, size_t length) {
-	size_t sended_bytes = 0;
+int socket_send(socket_t* self, const void* buffer, uint32_t length) {
+	uint32_t sended_bytes = 0;
 	int result_send;
-	size_t remaining_bytes = length;
+	uint32_t remaining_bytes = length;
 	const char* char_buffer = buffer;
 	while(sended_bytes < length) {
 		result_send = send(self->socket_fd, &char_buffer[sended_bytes],
@@ -107,10 +107,10 @@ int socket_send(socket_t* self, const void* buffer, size_t length) {
 	return sended_bytes;
 }
 
-int socket_recv(socket_t* self, void* buffer, size_t length) {
-	size_t received_bytes = 0;
+int socket_recv(socket_t* self, void* buffer, uint32_t length) {
+	uint32_t received_bytes = 0;
 	int result_recv;
-	size_t remaining_bytes = length;
+	uint32_t remaining_bytes = length;
 	char* char_buffer = buffer;
 	while(received_bytes < length) {
 		result_recv = recv(self->socket_fd, &char_buffer[received_bytes],

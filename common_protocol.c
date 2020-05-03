@@ -4,24 +4,16 @@
 #include "common_endianutils.h"
 
 int protocol_create(protocol_t* self) {
-	self->header = buffer_create(0);
-	if (self->header == NULL)
-		return -1;
-	self->body = buffer_create(0);
-	if (self->body == NULL)
-		return -1;
+	self->message = buffer_create(0);
+	if (self->message == NULL)
 	self->id = -1;
 	return 0;
 }
 
 static int protocol_restart(protocol_t* self) {
-	buffer_destroy(self->header);
-	self->header = buffer_create(0);
-	if (self->header == NULL)
-		return -1;
-	buffer_destroy(self->body);
-	self->body = buffer_create(0);
-	if (self->body == NULL)
+	buffer_destroy(self->message);
+	self->message = buffer_create(0);
+	if (self->message == NULL)
 		return -1;
 	return 0;
 }
@@ -34,13 +26,13 @@ uint32_t protocol_id_message(protocol_t* self) {
 }
 
 static int _aligment(protocol_t* self) {
-	buffer_t* aux = self->header;
+	buffer_t* aux = self->message;
 	int mod = aux->length % 8;
 	if (mod != 0) {
 		int padding = 8 - mod; 
 		uint8_t zeros[8];
 		memset(&zeros, 0, padding);
-		return buffer_concatenate(self->header, zeros, padding);
+		return buffer_concatenate(self->message, zeros, padding);
 	}
 	return 0;
 }
@@ -62,8 +54,8 @@ static void _split_method_parameters(char* string_to_split, uint32_t length,
 
 static int _set_array_lenght(protocol_t* self) {
 	uint8_t* endianness;
-	char* data = buffer_get_data(self->header);
-	uint32_t array_length = buffer_get_length(self->header) - 16;
+	char* data = buffer_get_data(self->message);
+	uint32_t array_length = buffer_get_length(self->message) - 16;
 	_to_littlendian(&endianness,array_length);
 	memcpy(&data[12],endianness,4);
 	return 0;
@@ -71,7 +63,7 @@ static int _set_array_lenght(protocol_t* self) {
 
 static int _set_body_lenght(protocol_t* self, uint32_t body_length) {
 	uint8_t* endianness;
-	char* data = (buffer_get_data(self->header));
+	char* data = (buffer_get_data(self->message));
 	_to_littlendian(&endianness, body_length);
 	memcpy(&data[4],endianness,4);
 	return 0;
@@ -92,7 +84,7 @@ static int _encoding_header(protocol_t* self, char* message, uint32_t length,
 	memset(&encoding[3], 0, 1);
 	memcpy(&encoding[4], endianness, sizeof(uint32_t));
 	memcpy(&encoding[8], message, length);
-	int result = buffer_concatenate(self->header, encoding, encoding_length+1);
+	int result = buffer_concatenate(self->message, encoding, encoding_length+1);
 	free(encoding);
 	return result;
 }
@@ -161,7 +153,7 @@ static int _build_header(protocol_t* self){
 	_to_littlendian(&endianness,id);
 	memcpy(&header[8],endianness,4);
 	memset(&header[12], 0, 4);
-	return buffer_concatenate(self->header, header, 16);	
+	return buffer_concatenate(self->message, header, 16);	
 }
 
 
@@ -175,7 +167,7 @@ static int _encoding_body(protocol_t* self, char* message, uint32_t length) {
 	_to_littlendian(&endianness,length);
 	memcpy(&encoding[0], endianness, sizeof(uint32_t));
 	memcpy(&encoding[4], message, length);
-	int result = buffer_concatenate(self->body, encoding, encoding_length+1);
+	int result = buffer_concatenate(self->message, encoding, encoding_length+1);
 	free(encoding);
 	return result;
 }
@@ -207,7 +199,8 @@ static int _build_body(protocol_t* self, char* body, uint32_t length) {
 }
 
 
-int protocol_encode_message(protocol_t* self, char* message, size_t length) {
+int protocol_encode_message(protocol_t* self, char* message,
+														uint32_t length) {
 	protocol_restart(self);
 	char *message_splited[4];
 	message_splited[0] = strtok(message, " ");
@@ -256,7 +249,7 @@ int protocol_encode_message(protocol_t* self, char* message, size_t length) {
 }
 
 void protocol_get_info_message(protocol_t* self,uint8_t* message,
-															 size_t length, uint32_t info_message[]) {
+															uint32_t length, uint32_t info_message[]) {
 	int i = 0;
 	while (i <= length) {
 		if (i == 4)
@@ -272,7 +265,7 @@ void protocol_get_info_message(protocol_t* self,uint8_t* message,
 
 
 void protocol_decode_header(protocol_t* self, uint8_t message[],
-														size_t length, char* info_message[]) {
+														uint32_t length, char* info_message[]) {
 	int i = 0;
 	int length_string;
 	while(i < length){
@@ -306,11 +299,11 @@ void protocol_decode_header(protocol_t* self, uint8_t message[],
 }
 
 void protocol_decode_body(protocol_t* self, uint8_t message[],
-													size_t length, char* info_message[]) {
+													uint32_t length, char* info_message[]) {
 	int i = 0;
 	int j = 0;
 	int length_string;
-	while (i < length) {
+	while (i < length) {	
 		length_string = _uint8_t_to_uint32(message, i);
 		info_message[j] = (char*)&message[i+4];
 		i += 4 + length_string + 1;
@@ -319,18 +312,20 @@ void protocol_decode_body(protocol_t* self, uint8_t message[],
 	return;
 }
 
-buffer_t* protocol_header_message(protocol_t* self) {
-	return self->header;
+int protocol_get_message_encoded(protocol_t* self, uint8_t** message) {
+	buffer_t* msg_encoded = self->message;
+	*message = buffer_get_data(msg_encoded);
+	uint32_t length_msg = buffer_get_length(msg_encoded);
+	return length_msg;
 }
 
-buffer_t* protocol_body_message(protocol_t* self){
-	return self->body;
-}
 
+void protocol_free_message(protocol_t* self, uint8_t* message) {
+	free(message);
+}
 
 void protocol_destroy(protocol_t* self) {
 	self->id = -1;
-	buffer_destroy(self->header);
-	buffer_destroy(self->body);
+	buffer_destroy(self->message);
 	return;
 }

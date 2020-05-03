@@ -1,6 +1,7 @@
 #ifndef COMMON_SOCKET_H
 #define COMMON_SOCKET_H
 #include <stdlib.h>
+#include <stdint.h>
 
 // TDA que representa al socket
 typedef struct socket {
@@ -19,7 +20,7 @@ int socket_destroy(socket_t* self);
 //Retorna 0 en caso de que el bind and listen haya sido correcto.
 //Devuelve -1 en caso de error.
 int socket_bind_and_listen(socket_t* self, const char* port,
-						   size_t max_waiting);
+						   uint32_t max_waiting);
 
 //Se encarga de conectar el cliente con el (host, port) indicando como
 //parámetro. En el socket self se le asignará el file descriptor.
@@ -34,13 +35,13 @@ int socket_accept(socket_t* self, socket_t* accepted_socket);
 //Envía un stream que comienza en buffer de longitud length.
 //En caso de error devuelve -1. Si el socket está cerrado devuelve 0.
 //Caso contrario, devuelve la cantidad de bytes enviados.
-int socket_send(socket_t* self, const void* buffer, size_t length);
+int socket_send(socket_t* self, const void* buffer, uint32_t length);
 
 //Almacena en un buffer de longitud length todos los bytes
 //recibidos en el socket self.
 //En caso de error devuelve -1. Si el socket está cerrado devuelve 0.
 //Caso contrario, devuelve la cantidad de bytes recibidos.
-int socket_recv(socket_t* self, void* buffer, size_t length);
+int socket_recv(socket_t* self, void* buffer, uint32_t length);
 
 
 //channel: SHUT_WR, SHUT_RD, SHUT_RDWR

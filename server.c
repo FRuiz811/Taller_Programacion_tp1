@@ -118,11 +118,11 @@ int server_run(server_t* self, const char* argv[]) {
 	return 0;
 }
 
-int server_send_message(server_t* self, const void* buffer, size_t length){
+int server_send_message(server_t* self, const void* buffer, uint32_t length){
 	return socket_send(&(self->socket_communicator), buffer, length);
 }
 
-int server_recv_message(server_t* self, void* buffer, size_t length) {
+int server_recv_message(server_t* self, void* buffer, uint32_t length) {
 	return socket_recv(&(self->socket_communicator), buffer, length);
 }
 

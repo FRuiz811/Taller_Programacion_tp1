@@ -86,10 +86,10 @@ int client_process_file(client_t* self) {
 			protocol_encode_message(&(self->protocol), line->data, line->length);
 			buffer_destroy(line);
 			line = buffer_create(0);
-			buffer_t* header = protocol_header_message(&(self->protocol));
-			buffer_t* body = protocol_body_message(&(self->protocol));
-			client_send_message(self, header->data, header->length);
-			client_send_message(self, body->data, body->length);
+			uint8_t* message;
+			int length_msg = protocol_get_message_encoded(&(self->protocol),
+																										&message);
+			client_send_message(self, message, length_msg);
 			client_recv_message(self);
 			buffer_destroy(line);
 			line = buffer_create(0);
@@ -121,7 +121,7 @@ int client_recv_message(client_t* self) {
 	return 0;
 }
 
-int client_send_message(client_t* self, const void* buffer, size_t length) {
+int client_send_message(client_t* self, const uint8_t* buffer, uint32_t length) {
 	return socket_send(&(self->socket_client), buffer, length);
 }
 

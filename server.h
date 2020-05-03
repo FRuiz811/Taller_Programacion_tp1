@@ -20,9 +20,9 @@ int server_is_already_connected(server_t* self);
 
 int server_accept_connection(server_t* self);
 
-int server_send_message(server_t* self, const void* buffer, size_t length);
+int server_send_message(server_t* self, const void* buffer, uint32_t length);
 
-int server_recv_message(server_t* self, void* buffer, size_t length);
+int server_recv_message(server_t* self, void* buffer, uint32_t length);
  
 int server_close(server_t* self);
 
