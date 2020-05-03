@@ -90,7 +90,7 @@ static int server_receive_body(server_t* self, int length,
 	int i = 0;
 	printf("* Parametros:\n");
 	while (i < cant_parmeters) {
-		printf("\t * %s\n", body_parameters[i]);
+		printf("    * %s\n", body_parameters[i]);
 		i++;
 	}
 	free(body_parameters);
