@@ -121,7 +121,8 @@ int client_recv_message(client_t* self) {
 	return 0;
 }
 
-int client_send_message(client_t* self, const uint8_t* buffer, uint32_t length) {
+int client_send_message(client_t* self, const uint8_t* buffer, 
+												uint32_t length) {
 	return socket_send(&(self->socket_client), buffer, length);
 }
 
