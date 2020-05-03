@@ -112,6 +112,7 @@ int server_run(server_t* self, const char* argv[]) {
 			char zeros[8];
 			server_recv_message(self,zeros, padding);
 			server_receive_body(self,info_header[0], cant_parmeters);
+			printf("\n");
 		}
 		server_send_message(self, MSG_RECV, 3);
 	}
