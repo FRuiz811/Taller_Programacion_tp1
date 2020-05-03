@@ -22,7 +22,8 @@ int socket_destroy(socket_t* self) {
 //Resuelve la conexión con el host (si es indicado) y el puerto al cual el
 //soquet se conecta. El file descriptor que es utilizado queda almacenado
 //en el soquet self.
-static int _resolve_address(socket_t* self, struct addrinfo* hints, const char* host, const char* port) {
+static int _resolve_address(socket_t* self, struct addrinfo* hints, 
+	                        const char* host, const char* port) {
 	struct addrinfo *results, *iter;
 	int val = 1;
 	if (getaddrinfo(host, port, hints, &results) != 0) {
@@ -36,11 +37,12 @@ static int _resolve_address(socket_t* self, struct addrinfo* hints, const char* 
 			continue;
 		if(host == NULL) {
 			if (bind(self->socket_fd, iter->ai_addr, iter->ai_addrlen) == 0) {
-				setsockopt(self->socket_fd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val));
+				setsockopt(self->socket_fd, SOL_SOCKET,
+						   SO_REUSEADDR, &val, sizeof(val));
 				break;
 			}
 		} else {
-			if(connect(self->socket_fd, iter->ai_addr, iter->ai_addrlen) != -1) 
+			if(connect(self->socket_fd, iter->ai_addr, iter->ai_addrlen) != -1)
 				break;
 		}
 		socket_destroy(self);
@@ -51,7 +53,8 @@ static int _resolve_address(socket_t* self, struct addrinfo* hints, const char* 
 	return 0;
 }
 
-int socket_bind_and_listen(socket_t* self, const char* port, size_t max_waiting) {
+int socket_bind_and_listen(socket_t* self, const char* port, 
+						   size_t max_waiting) {
 	struct addrinfo hints;
 
 	memset(&hints, 0, sizeof(struct addrinfo));
@@ -94,7 +97,8 @@ int socket_send(socket_t* self, const void* buffer, size_t length) {
 	size_t remaining_bytes = length;
 	const char* char_buffer = buffer;
 	while(sended_bytes < length) {
-		result_send = send(self->socket_fd, &char_buffer[sended_bytes], remaining_bytes, MSG_NOSIGNAL);
+		result_send = send(self->socket_fd, &char_buffer[sended_bytes],
+						   remaining_bytes, MSG_NOSIGNAL);
 		if(result_send == -1 || result_send == 0)
 			return result_send;
 		sended_bytes += result_send;
@@ -109,7 +113,8 @@ int socket_recv(socket_t* self, void* buffer, size_t length) {
 	size_t remaining_bytes = length;
 	char* char_buffer = buffer;
 	while(received_bytes < length) {
-		result_recv = recv(self->socket_fd, &char_buffer[received_bytes], remaining_bytes, 0);
+		result_recv = recv(self->socket_fd, &char_buffer[received_bytes],
+						   remaining_bytes, 0);
 		if(result_recv == -1 || result_recv == 0)
 			return result_recv;
 		received_bytes += result_recv;

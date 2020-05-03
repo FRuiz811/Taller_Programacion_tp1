@@ -23,9 +23,10 @@ int server_is_already_connected(server_t* self) {
 }
 
 int server_connect_to(server_t* self, const char* port) {
-	if (server_is_already_connected(self))
+  if (server_is_already_connected(self))
 		return -1;
-	int connection_success = socket_bind_and_listen(&(self->socket_server), port, SOCKET_WAITING);
+	int connection_success = socket_bind_and_listen(&(self->socket_server),
+													port, SOCKET_WAITING);
 	return connection_success;
 }
 
@@ -41,11 +42,12 @@ int server_accept_connection(server_t* self) {
 }
 
 static int server_receive_info(server_t* self, uint32_t info_header[]){
-	int buffer_size = 16;
-	uint8_t info_message_received[buffer_size];
-	int bytes_received = server_recv_message(self,&info_message_received, buffer_size);
+	uint8_t info_message_received[16];
+	int bytes_received = server_recv_message(self,&info_message_received, 
+											 16);
 	if (bytes_received > 0) {
-		protocol_get_info_message(&self->protocol, info_message_received, 16, info_header);
+		protocol_get_info_message(&self->protocol, info_message_received,
+								  16, info_header);
 		printf("* Id: 0x%08x\n", info_header[1]);
 	}
 	return bytes_received;
@@ -53,37 +55,47 @@ static int server_receive_info(server_t* self, uint32_t info_header[]){
 
 static void _print_message(char* header_parts[]){
 	printf("* Destino: %s\n", header_parts[0]);
-	printf("* Path: %s\n", header_parts[1]);
+	printf("* Ruta: %s\n", header_parts[1]);
 	printf("* Interfaz: %s\n", header_parts[2]);
-	printf("* Método: %s\n", header_parts[3]);
+	printf("* Metodo: %s\n", header_parts[3]);
 	return;
 }
 
 static int server_receive_header(server_t* self, int length) {
-	uint8_t header[length];
+	uint8_t* header = malloc(sizeof(uint8_t) * length + 1);
+	if (header == NULL)
+		return -1;
 	char* header_parts[5];
 	header_parts[4] = NULL;
 	int cant_parmeters = 0;
-	server_recv_message(self,&header, length);
+	server_recv_message(self,header, length);
 	protocol_decode_header(&self->protocol, header, length, header_parts);
 	_print_message(header_parts);
 	if(header_parts[4] != NULL)
 		cant_parmeters = strlen(header_parts[4]);
+	free(header);
 	return cant_parmeters;
 }
 
-static void server_receive_body(server_t* self, int length, int cant_parmeters) {
-	uint8_t body[length];
-	char* body_parameters[cant_parmeters];
-	server_recv_message(self,&body, length);
+static int server_receive_body(server_t* self, int length, 
+								int cant_parmeters) {
+	uint8_t* body = malloc(sizeof(uint8_t) * length + 1);
+	if (body == NULL)
+		return -1;
+	char** body_parameters = malloc(sizeof(char*) * cant_parmeters);
+	if (body_parameters == NULL)
+		return -1;
+	server_recv_message(self,body, length);
 	protocol_decode_body(&self->protocol, body, length, body_parameters);
 	int i = 0;
-	printf("* Parámetros:\n");
+	printf("* Parametros:\n");
 	while (i < cant_parmeters) {
 		printf("\t * %s\n", body_parameters[i]);
 		i++;
 	}
-	return;
+	free(body_parameters);
+	free(body);
+	return 0;
 }
 
 int server_run(server_t* self, const char* argv[]) {
@@ -97,7 +109,7 @@ int server_run(server_t* self, const char* argv[]) {
 		if (info_header[0] != 0){
 			int mod = (info_header[2] + 16) % 8;
 			int padding = 8 - mod;
-			char zeros[padding];
+			char zeros[8];
 			server_recv_message(self,zeros, padding);
 			server_receive_body(self,info_header[0], cant_parmeters);
 		}

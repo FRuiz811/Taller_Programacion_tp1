@@ -18,7 +18,8 @@ int socket_destroy(socket_t* self);
 //de conexiones en espera que puede haber a la vez.
 //Retorna 0 en caso de que el bind and listen haya sido correcto.
 //Devuelve -1 en caso de error.
-int socket_bind_and_listen(socket_t* self, const char* port, size_t max_waiting);
+int socket_bind_and_listen(socket_t* self, const char* port,
+						   size_t max_waiting);
 
 //Se encarga de conectar el cliente con el (host, port) indicando como
 //parámetro. En el socket self se le asignará el file descriptor.

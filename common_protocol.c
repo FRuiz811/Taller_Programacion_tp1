@@ -1,6 +1,7 @@
 #include "common_protocol.h"
 #include <string.h>
-#include "common_buffer_dinamico.h"
+#include "common_dynamic_buffer.h"
+#include "common_endianutils.h"
 
 int protocol_create(protocol_t* self) {
 	self->header = buffer_create(0);
@@ -27,42 +28,9 @@ static int protocol_restart(protocol_t* self) {
 
 uint32_t protocol_id_message(protocol_t* self) {
 	static uint32_t id = 0;
-	id += 1	;
+	id += 1;
 	self->id = id;
 	return id;
-}
-
-//Esta función permite saber si se está trabajando en un sistema 
-//con littlendian (Devolverá 1), o bigendian (devolvera 0)
-static int _is_littlendian() {
-	int value = 1;
-	char *c = (char*) &value;
-	if (*c)
-		return 1;
-	return 0;
-}
-
-//En caso de que se trabaje en big endian se cambia a littlendian
-//devolviendo como un char* los bytes que representan a value en
-//este nuevo endianness
-static uint8_t* _change_endianness(uint32_t value){
-	uint8_t *temp;
-	uint8_t *endianness = {0};
-	temp = (uint8_t*) &value;
-	int j = 0;
-	for (int i = sizeof(uint32_t) -1 ; i >= 0; i--) {
-		endianness[j] = temp[i];
-		j++;
-	}
-	return endianness;
-}
-
-static void _to_littlendian(uint8_t** endianness, uint32_t number){
-	if (!_is_littlendian())
-		*endianness = _change_endianness(number);
-	else 
-		*endianness = (uint8_t*) &number;
-	return;
 }
 
 static int _aligment(protocol_t* self) {
@@ -70,14 +38,15 @@ static int _aligment(protocol_t* self) {
 	int mod = aux->length % 8;
 	if (mod != 0) {
 		int padding = 8 - mod; 
-		uint8_t zeros[padding];
+		uint8_t zeros[8];
 		memset(&zeros, 0, padding);
 		return buffer_concatenate(self->header, zeros, padding);
 	}
 	return 0;
 }
 
-static void _split_method_parameters(char* string_to_split, uint32_t length, char** method, char** parameters) {
+static void _split_method_parameters(char* string_to_split, uint32_t length,
+																		 char** method, char** parameters) {
 	char* limit_method = strchr(string_to_split, '(');
 	if (limit_method == NULL){
 		*parameters = strchr(string_to_split, '\0');
@@ -98,7 +67,6 @@ static int _set_array_lenght(protocol_t* self) {
 	_to_littlendian(&endianness,array_length);
 	memcpy(&data[12],endianness,4);
 	return 0;
-
 }
 
 static int _set_body_lenght(protocol_t* self, uint32_t body_length) {
@@ -107,22 +75,26 @@ static int _set_body_lenght(protocol_t* self, uint32_t body_length) {
 	_to_littlendian(&endianness, body_length);
 	memcpy(&data[4],endianness,4);
 	return 0;
-
 }
 
-static int _encoding_header(protocol_t* self, char* message, uint32_t length, char data_type, uint8_t parameter_type) {
+static int _encoding_header(protocol_t* self, char* message, uint32_t length,
+														char data_type, uint8_t parameter_type) {
+	uint32_t encoding_length = length + sizeof(uint32_t) + 2 + 1 + 1;
+	char* encoding = malloc(sizeof(char) * (encoding_length+1));
+	if (encoding == NULL)
+		return -1;
+	memset(encoding, 0, sizeof(char) * (encoding_length+1));
 	uint8_t* endianness;
 	_to_littlendian(&endianness, length);
-	uint32_t encoding_length = length + 1 + sizeof(uint32_t) + 2 + 1 + 1;
-	char encoding[encoding_length];
 	encoding[0] = parameter_type;
 	encoding[1] = 0x01;
 	encoding[2] = data_type;
 	memset(&encoding[3], 0, 1);
 	memcpy(&encoding[4], endianness, sizeof(uint32_t));
-	message[length] = '\0';
-	memcpy(&encoding[8], message, length+1);
-	return buffer_concatenate(self->header, encoding, encoding_length);
+	memcpy(&encoding[8], message, length);
+	int result = buffer_concatenate(self->header, encoding, encoding_length+1);
+	free(encoding);
+	return result;
 }
 
 static int _destiny_encode(protocol_t* self, char* destiny, uint32_t length) {
@@ -139,7 +111,8 @@ static int _path_encode(protocol_t* self, char* path, uint32_t length) {
 	return result;
 }
 
-static int _interface_encode(protocol_t* self, char* interface, uint32_t length) {
+static int _interface_encode(protocol_t* self, char* interface, 
+														 uint32_t length) {
 	uint8_t parameter_type = 0x02;
 	char data_type = 's';
 	int result =_encoding_header(self,interface,length,data_type,parameter_type);
@@ -153,22 +126,26 @@ static int _method_encode(protocol_t* self, char* method, uint32_t length) {
 	return result;
 }
 
-static int _parameters_encode(protocol_t* self, char* parameters, uint32_t length) {
+static int _parameters_encode(protocol_t* self, char* parameters,
+															uint32_t length) {
+	if (length == 0)
+		return 0;
 	uint8_t parameter_type = 0x09;
 	char data_type = 'g';
-	parameters[length-1] = '\0';
 	length -= 1;
-	char encoding[length];
-	encoding[0] = 's';
+	char* encoding = malloc(sizeof(char) * length + 1);
+	if(encoding == NULL)
+		return -1;
+	memset(encoding,0,sizeof(char) * length + 1);
 	int j = 1;
 	for (int i = 0; i < length; i++) {
 		if (parameters[i] == ',') {
-			encoding[j] = 's';
 			j++;
 		}
 	}
-	encoding[j] = '\0';
+	memset(encoding,'s',j);
 	int result =_encoding_header(self,encoding,j,data_type,parameter_type);
+	free(encoding);
 	return result;
 }
 
@@ -189,14 +166,18 @@ static int _build_header(protocol_t* self){
 
 
 static int _encoding_body(protocol_t* self, char* message, uint32_t length) {
+	uint32_t encoding_length = length + sizeof(uint32_t);
+	char* encoding =  malloc(sizeof(char) * (encoding_length+1));
+	if (encoding == NULL)
+		return -1;
+	memset(encoding, 0, sizeof(char) * (encoding_length+1));
 	uint8_t* endianness;
 	_to_littlendian(&endianness,length);
-	uint32_t encoding_length = length + 1 + sizeof(uint32_t);
-	char encoding[encoding_length];
 	memcpy(&encoding[0], endianness, sizeof(uint32_t));
-	message[length]='\0';
-	memcpy(&encoding[4], message, length+1);
-	return buffer_concatenate(self->body, encoding, encoding_length);
+	memcpy(&encoding[4], message, length);
+	int result = buffer_concatenate(self->body, encoding, encoding_length+1);
+	free(encoding);
+	return result;
 }
 
 
@@ -238,16 +219,20 @@ int protocol_encode_message(protocol_t* self, char* message, size_t length) {
 	while (message_splited[i] != NULL) {
 		switch (i) {
 			case 0 :
-				error =_destiny_encode(self, message_splited[i], strlen(message_splited[i]));
+				error =_destiny_encode(self, message_splited[i],
+															 strlen(message_splited[i]));
 				break;
 			 case 1 :
-				error = _path_encode(self, message_splited[i], strlen(message_splited[i]));
+				error = _path_encode(self, message_splited[i],
+														 strlen(message_splited[i]));
 				break;
 			case 2 :
-				error = _interface_encode(self, message_splited[i], strlen(message_splited[i]));
+				error = _interface_encode(self, message_splited[i],
+																  strlen(message_splited[i]));	
 				break;
 			case 3 :
-				_split_method_parameters(message_splited[i],strlen(message_splited[i]), &method, &parameters);
+				_split_method_parameters(message_splited[i],
+													strlen(message_splited[i]), &method, &parameters);
 				error = _method_encode(self, method, strlen(method));
 				if (*parameters != '\0') {
 					_aligment(self);
@@ -259,32 +244,19 @@ int protocol_encode_message(protocol_t* self, char* message, size_t length) {
 		_aligment(self);
 		if (parameters !=  NULL && *parameters != '\0') 
 			_build_body(self, parameters, strlen(parameters));
-		i++;
+		i++;	
 		if (error != 0)
 			return -1;
-		message_splited[i] = strtok(NULL," ");
+		if (i == 3)
+			message_splited[i] = strtok(NULL,")");
+		else
+			message_splited[i] = strtok(NULL," ");
 	}
 	return 0;
 }
 
-static int _uint8_t_to_uint32(uint8_t* message, int pos) {
-	uint8_t temp[4];
-	uint32_t* temp32;
-	if (!_is_littlendian()){
-		for (int j = 3; j >= 0; j--) {
-			temp[3-j] = message[pos+j];
-		}
-	} else {
-		for (int j = 0; j < 4; j++) {
-			temp[j] = message[pos+j];
-		}
-	}
-	temp32 = (uint32_t*) temp;		
-	return *temp32;
-}
-
-
-void protocol_get_info_message(protocol_t* self,uint8_t* message, size_t length, uint32_t info_message[]) {
+void protocol_get_info_message(protocol_t* self,uint8_t* message,
+															 size_t length, uint32_t info_message[]) {
 	int i = 0;
 	while (i <= length) {
 		if (i == 4)
@@ -299,7 +271,8 @@ void protocol_get_info_message(protocol_t* self,uint8_t* message, size_t length,
 }
 
 
-void protocol_decode_header(protocol_t* self, uint8_t message[], size_t length, char* info_message[]) {
+void protocol_decode_header(protocol_t* self, uint8_t message[],
+														size_t length, char* info_message[]) {
 	int i = 0;
 	int length_string;
 	while(i < length){
@@ -332,7 +305,8 @@ void protocol_decode_header(protocol_t* self, uint8_t message[], size_t length, 
 	}
 }
 
-void protocol_decode_body(protocol_t* self, uint8_t message[], size_t length, char* info_message[]) {
+void protocol_decode_body(protocol_t* self, uint8_t message[],
+													size_t length, char* info_message[]) {
 	int i = 0;
 	int j = 0;
 	int length_string;

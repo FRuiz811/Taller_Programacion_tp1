@@ -25,4 +25,5 @@ int server_send_message(server_t* self, const void* buffer, size_t length);
 int server_recv_message(server_t* self, void* buffer, size_t length);
  
 int server_close(server_t* self);
+
 #endif

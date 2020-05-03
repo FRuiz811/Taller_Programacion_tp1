@@ -16,7 +16,7 @@ int client_run(client_t* self, int argc, const char* argv[]);
 
 int client_connect_to(client_t* self, const char* host, const char* port);
 
-int client_is_already_connected(client_t* self); //Ver si es necesaria
+int client_is_already_connected(client_t* self); 
 
 int client_define_input(client_t* self,int argc, const char* argv[]);
 
@@ -27,4 +27,5 @@ int client_send_message(client_t* self, const void* buffer, size_t length);
 int client_recv_message(client_t* self);
  
 int client_close(client_t* self);
+
 #endif

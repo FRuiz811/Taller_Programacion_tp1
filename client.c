@@ -3,7 +3,7 @@
 #include <sys/socket.h>
 #include <string.h>
 #include <stdbool.h>
-#include "common_buffer_dinamico.h"
+#include "common_dynamic_buffer.h"
 #include <stdint.h>
 
 
@@ -42,13 +42,14 @@ int client_define_input(client_t* self,int argc, const char* argv[]) {
 	else 
 		self->input = fopen(argv[3], "r");
 	if (self->input == NULL) {
-		fprintf(stderr, "No se ha podido abrir el archivo ingresado como parámetro\n");
+		fprintf(stderr,"No se pudo abrir el archivo ingresado como parámetro\n");
 		return -1;
 	}
 	return 0;
 }
 
-static int _is_msg_complete(buffer_t* line, char* buffer, int length, int* position) {
+static int _is_msg_complete(buffer_t* line, char* buffer, int length,
+														int* position) {
 	char* end_line = memchr(buffer, '\n', length);
 	int new_size;
 	char* check_another_msg;
@@ -58,11 +59,11 @@ static int _is_msg_complete(buffer_t* line, char* buffer, int length, int* posit
 	} else {
 		new_size = end_line - buffer;
 		*position = new_size;
-		printf("Length %d\n",length);
-		printf("new_size+1: %d\n",new_size+1);
-		check_another_msg = memchr(&buffer[new_size], '\n', length);
-		if (check_another_msg != NULL)
-			completed += 1;
+		if(new_size+1 < length){
+			check_another_msg = memchr(&buffer[new_size+1], '\n',length-new_size-1);
+			if (check_another_msg != NULL && *check_another_msg != '\0')
+				completed += 1;
+		}
 		buffer[new_size] = '\0';
 		buffer_concatenate(line, buffer, new_size+1);
 		completed += 1;
