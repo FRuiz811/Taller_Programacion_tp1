@@ -18,7 +18,8 @@ int server_create(server_t* self) {
 	return 0;
 }
 
-int server_is_already_connected(server_t* self) {
+//Retorna 0 en caso de que no esté conectado y 1 en caso de que si
+static int server_is_already_connected(server_t* self) {
 	return socket_is_connected(&(self->socket_server));
 }
 
@@ -41,6 +42,19 @@ int server_accept_connection(server_t* self) {
 	return 0;
 }
 
+int server_send_message(server_t* self, const void* buffer, uint32_t length){
+	return socket_send(&(self->socket_communicator), buffer, length);
+}
+
+int server_recv_message(server_t* self, void* buffer, uint32_t length) {
+	return socket_recv(&(self->socket_communicator), buffer, length);
+}
+
+//Se reciben los primeros 16 bytes del mensaje. Imprime el ID del msj
+//Además setea en info_header la longitud del body, el id, y la longitud
+//del array.
+//Devuelve la cantidad de bytes recibidos o -1 en caso de que se cierre
+//la comunicación
 static int server_receive_info(server_t* self, uint32_t info_header[]){
 	uint8_t info_message_received[16];
 	int bytes_received = server_recv_message(self,&info_message_received, 
@@ -61,6 +75,10 @@ static void _print_message(char* header_parts[]){
 	return;
 }
 
+//Se recibe la cantidad de bytes indicada en length, correspondientes al
+//header. Se setean cada una de las partes del mensaje y se imprimen en
+//pantalla. Devuelve -1 en caso de error y la cantidad de
+//parámetros que hay en caso contrario.
 static int server_receive_header(server_t* self, int length) {
 	uint8_t* header = malloc(sizeof(uint8_t) * length + 1);
 	if (header == NULL)
@@ -68,7 +86,8 @@ static int server_receive_header(server_t* self, int length) {
 	char* header_parts[5];
 	header_parts[4] = NULL;
 	int cant_parmeters = 0;
-	server_recv_message(self,header, length);
+	if (server_recv_message(self,header, length) == -1)
+		return -1;
 	protocol_decode_header(&self->protocol, header, length, header_parts);
 	_print_message(header_parts);
 	if(header_parts[4] != NULL)
@@ -77,6 +96,9 @@ static int server_receive_header(server_t* self, int length) {
 	return cant_parmeters;
 }
 
+//Se recibe la cantidad de bytes indicada en length, correspondientes al
+//body. En cant_parameters se indica la cantidad de parámetros a recibir.
+//Retorna -1 en caso de error, 0 en caso contrario.
 static int server_receive_body(server_t* self, int length, 
 								int cant_parmeters) {
 	uint8_t* body = malloc(sizeof(uint8_t) * length + 1);
@@ -85,7 +107,8 @@ static int server_receive_body(server_t* self, int length,
 	char** body_parameters = malloc(sizeof(char*) * cant_parmeters);
 	if (body_parameters == NULL)
 		return -1;
-	server_recv_message(self,body, length);
+	if (server_recv_message(self,body, length) == -1)
+		return -1;
 	protocol_decode_body(&self->protocol, body, length, body_parameters);
 	int i = 0;
 	printf("* Parametros:\n");
@@ -110,27 +133,23 @@ int server_run(server_t* self, const char* argv[]) {
 			int mod = (info_header[2] + 16) % 8;
 			int padding = 8 - mod;
 			char zeros[8];
-			server_recv_message(self,zeros, padding);
-			server_receive_body(self,info_header[0], cant_parmeters);
-			printf("\n");
+			if (server_recv_message(self,zeros, padding) == -1)
+				return -1;
+			if (server_receive_body(self,info_header[0], cant_parmeters) == -1)
+				return -1;
 		}
-		server_send_message(self, MSG_RECV, 3);
+		printf("\n");
+		if (server_send_message(self, MSG_RECV, 3) == -1)
+			return -1;
 	}
 	return 0;
 }
 
-int server_send_message(server_t* self, const void* buffer, uint32_t length){
-	return socket_send(&(self->socket_communicator), buffer, length);
-}
-
-int server_recv_message(server_t* self, void* buffer, uint32_t length) {
-	return socket_recv(&(self->socket_communicator), buffer, length);
-}
-
-int server_close(server_t* self) {
+void server_close(server_t* self) {
 	socket_shutdown(&(self->socket_server), SHUT_RDWR);
+	socket_shutdown(&(self->socket_communicator), SHUT_RDWR);
 	protocol_destroy(&(self->protocol));
-	if (socket_destroy(&(self->socket_server)) == -1) 
-		return -1;
-	return 0;
+	socket_destroy(&(self->socket_server));
+	socket_destroy(&(self->socket_communicator));
+	return;
 }

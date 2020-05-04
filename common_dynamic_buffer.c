@@ -10,6 +10,7 @@ buffer_t* buffer_create(uint32_t length) {
 		return NULL;
 
 	buffer->data = malloc(sizeof(char) * length);
+	memset(buffer->data, 0, length);
 
 	if (length > 0 && buffer->data == NULL) {
 		free(buffer);
@@ -17,6 +18,7 @@ buffer_t* buffer_create(uint32_t length) {
 	}
 
 	buffer->length = length;
+	buffer->pos = 0;
 	return buffer;
 }
 
@@ -24,14 +26,15 @@ int buffer_concatenate(buffer_t* self, const void* data_to_add,
 					   uint32_t length) {
 	uint32_t previous_length = self->length;
 	uint32_t new_lenght = sizeof(char) * (length + previous_length);
-	char* new_data = realloc(self->data, new_lenght);	
+	char* new_data = realloc(self->data, new_lenght + sizeof(char));	
 	
 	if (new_data == NULL)
 		return -1;
 
-	memcpy(&new_data[previous_length], data_to_add, length);
+	memcpy(&new_data[self->pos], data_to_add, length);
 	self->data = new_data;
 	self->length = length + previous_length;
+	self->pos += length;
 
 	return 0;
 }

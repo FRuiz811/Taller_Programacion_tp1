@@ -6,7 +6,6 @@
 #include "common_dynamic_buffer.h"
 #include <stdint.h>
 
-
 #define BUFFER_SIZE 32
 
 int client_create(client_t* self) {
@@ -23,7 +22,8 @@ int client_create(client_t* self) {
 	return 0;
 }
 
-int client_is_already_connected(client_t* self) {
+//Retorna 0 en caso de que no esté conectado y 1 en caso de que si
+static int client_is_already_connected(client_t* self) {
 	return socket_is_connected(&(self->socket_client));
 }
 
@@ -48,6 +48,12 @@ int client_define_input(client_t* self,int argc, const char* argv[]) {
 	return 0;
 }
 
+//Se encarga de verificar si en el buffer se completa una línea obtenida
+//desde el archivo de entrada. También verifica que no haya otra línea entera
+//dentro de buffer.
+//Retorna la cantidad de filas completas que hay dentro de buffer y setea al
+//parámetro position en la posición del buffer donde se encontró la primera 
+//ocurrencia. Retorna -1 en caso de error.
 static int _is_msg_complete(buffer_t* line, char* buffer, int length,
 														int* position) {
 	char* end_line = memchr(buffer, '\n', length);
@@ -55,7 +61,8 @@ static int _is_msg_complete(buffer_t* line, char* buffer, int length,
 	char* check_another_msg;
 	int completed = 0;
 	if (end_line == NULL) {
-		buffer_concatenate(line, buffer, length);
+		if (buffer_concatenate(line, buffer, length) == -1)
+			return -1;
 	} else {
 		new_size = end_line - buffer;
 		*position = new_size;
@@ -65,11 +72,37 @@ static int _is_msg_complete(buffer_t* line, char* buffer, int length,
 				completed += 1;
 		}
 		buffer[new_size] = '\0';
-		buffer_concatenate(line, buffer, new_size+1);
+		if (buffer_concatenate(line, buffer, new_size+1) == -1)
+			return -1;
 		completed += 1;
 	}
 	memset(buffer,0,length);
 	return completed;
+}
+
+int client_recv_message(client_t* self) {
+	char msg_recieve[3];
+	protocol_t protocol = self->protocol;
+	if(socket_recv(&(self->socket_client), msg_recieve, 3) == -1)
+		return -1;
+	printf("0x%08x: %s",protocol.id, msg_recieve);
+	return 0;
+}
+
+int client_send_message(client_t* self, const uint8_t* buffer, 
+												uint32_t length) {
+	return socket_send(&(self->socket_client), buffer, length);
+}
+
+static int client_communicate_server(client_t* self, buffer_t* line) {
+	uint8_t* message;
+	int length_msg = protocol_encode_message(&(self->protocol), line->data,
+																					line->length, &message);
+	if (client_send_message(self, message, length_msg) == -1)
+		return -1;
+	if (client_recv_message(self) == -1)
+		return -1;
+	return 0;
 }
 
 int client_process_file(client_t* self) {
@@ -83,14 +116,7 @@ int client_process_file(client_t* self) {
 		int buffer_read = fread(buffer, sizeof(char), BUFFER_SIZE, self->input);
 		msg_complete = _is_msg_complete(line, buffer, buffer_read, &new_size);
 		if (msg_complete) {
-			protocol_encode_message(&(self->protocol), line->data, line->length);
-			buffer_destroy(line);
-			line = buffer_create(0);
-			uint8_t* message;
-			int length_msg = protocol_get_message_encoded(&(self->protocol),
-																										&message);
-			client_send_message(self, message, length_msg);
-			client_recv_message(self);
+			client_communicate_server(self, line);
 			buffer_destroy(line);
 			line = buffer_create(0);
 		}
@@ -108,29 +134,15 @@ int client_run(client_t* self, int argc, const char* argv[]) {
 		return -1; //No se pudo abrir el archivo input.
 	if (client_connect_to(self, argv[1],argv[2]) == -1)
 		return -1;
-	client_process_file(self);
-	return 0;
-}
-
-int client_recv_message(client_t* self) {
-	char msg_recieve[3];
-	protocol_t protocol = self->protocol;
-	if(socket_recv(&(self->socket_client), msg_recieve, 3) == -1)
+	if (client_process_file(self) == -1)
 		return -1;
-	printf("0x%08x: %s",protocol.id, msg_recieve);
 	return 0;
 }
 
-int client_send_message(client_t* self, const uint8_t* buffer, 
-												uint32_t length) {
-	return socket_send(&(self->socket_client), buffer, length);
-}
-
-int client_close(client_t* self) {
+void client_close(client_t* self) {
 	protocol_destroy(&(self->protocol));
 	socket_shutdown(&(self->socket_client), SHUT_RDWR);
 	fclose(self->input);
-	if (socket_destroy(&(self->socket_client)) == -1) 
-		return -1;
-	return 0;
+	socket_destroy(&(self->socket_client));
+	return;
 }

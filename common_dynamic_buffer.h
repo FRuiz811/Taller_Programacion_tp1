@@ -6,6 +6,7 @@
 typedef struct buffer {
 	char* data;
 	uint32_t length;
+	uint32_t pos;
 }buffer_t;
 
 
