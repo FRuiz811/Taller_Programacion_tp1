@@ -75,9 +75,10 @@ El siguiente diagrama ejemplifica la secuncia recién explicada.
 
 ![Diagrama Servidor/Cliente](img/Diagrama_Servidor_Cliente.png)
 
-##Problemas Encontrados
 
-###Codificación del Protocolo
+## Problemas Encontrados
+
+### Codificación del Protocolo
 Debido a la diversidad de longitudes de cada uno de los partes del mensaje y 
 la variabilidad de como pueden venir los parámetros, estos pueden estar 
 separados por ", " o solamente por "," me encontré con el trabajo de seccionar 
@@ -92,7 +93,7 @@ concatenando los bytes de manera contigua pudiendo independizar las
 codificaciones de cada parte, ya sea para el array de parámetros, el padding o 
 el cuerpo del mensaje.
 
-###Recibir información en el Server
+### Recibir información en el Server
 El problema en esta parte, también radicó en las diferentes longitudes que 
 pueden tener los mensajes, en este caso me afectaría la manera en que los iba 
 a recibir. Por eso, decidí dividir la recepción y la decodificación del 
@@ -108,10 +109,11 @@ de las demás (destino, ruta, interfaz, método).
 cuerpo nos indique. Esto se vuelve a enviar al protocolo para tener cada uno 
 de los parámetros separados.
 
-##Aclaraciones
+## Aclaraciones
 Esta sección está integramente dedicada a realizar aclaraciones acerca de la 
 entrega.
-###Normas de Codificación
+
+### Normas de Codificación
 Al intentar ejecutar las normas de codificación, me surgió el siguiente error:
 
 ![Error Normas Codificación](img/ErrorNormas.png)
@@ -129,17 +131,3 @@ resolver el trabajo práctico.
 La decisión tomada fue dejar strtok que si forma parte del standard C99, y que 
 a fines de la resolución actual, es muy útil y por ahora, no nos interesa el 
 trabajo con threads.
-
-###Error con Valgrind
-Al ejecutar el cliente con valgrind, me aparece el siguiente error que no pude solucionar: 
-
-![Error Valgrind](img/errorValgrind1.png)
-
-![Error Valgrind](img/errorValgrind2.png)
-
-Se que está asociado a los últimos bytes ubicados en el buffer dinámico, y que 
-su error varía dependiendo si el mensaje viene sin parámetros (imagen 1) o si 
-viene con ellos (imagen 2).
-
-Estuve mucho tiempo intentando solucionar este error y no pude encontrar la 
-manera de solucionarlo.

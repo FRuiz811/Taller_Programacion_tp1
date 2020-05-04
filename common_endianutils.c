@@ -1,4 +1,5 @@
 #include "common_endianutils.h"
+#include <byteswap.h>
 
 int _is_littlendian() {
 	int value = 1;
@@ -20,12 +21,13 @@ uint8_t* _change_endianness(uint32_t value){
 	return endianness;
 }
 
-void _to_littlendian(uint8_t** endianness, uint32_t number){
+uint32_t _to_littlendian(uint32_t number){
+	uint32_t endianness;
 	if (!_is_littlendian())
-		*endianness = _change_endianness(number);
+		endianness = bswap_32(number);
 	else 
-		*endianness = (uint8_t*) &number;
-	return;
+		endianness = number;
+	return endianness;
 }
 
 int _uint8_t_to_uint32(uint8_t* value, int pos) {

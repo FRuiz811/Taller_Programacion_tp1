@@ -13,7 +13,7 @@ uint8_t* _change_endianness(uint32_t value);
 
 //Transforma el parámetro number a littleendian y lo almacena
 //en el puntero endianness.
-void _to_littlendian(uint8_t** endianness, uint32_t number);
+uint32_t _to_littlendian(uint32_t number);
 
 //Transforma el valor que se encuentra en la posición pos más 
 //las 3 posiciones siguiente del array de uint8_t y lo transforma
