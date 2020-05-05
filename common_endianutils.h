@@ -7,9 +7,8 @@
 int _is_littlendian();
 
 //En caso de que se trabaje en big endian se cambia a littlendian
-//devolviendo como un char* los bytes que representan a value en
-//este nuevo endianness
-uint8_t* _change_endianness(uint32_t value);
+//devolviendo como un uint32_t con los bytes de value invertidos.
+uint32_t _change_endianness(uint32_t value);
 
 //Transforma el parámetro number a littleendian y lo almacena
 //en el puntero endianness.

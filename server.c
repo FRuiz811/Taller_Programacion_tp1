@@ -80,7 +80,7 @@ static void _print_message(char* header_parts[]){
 //pantalla. Devuelve -1 en caso de error y la cantidad de
 //parámetros que hay en caso contrario.
 static int server_receive_header(server_t* self, int length) {
-	uint8_t* header = malloc(sizeof(uint8_t) * length + 1);
+	uint8_t* header = malloc(sizeof(uint8_t) * length);
 	if (header == NULL)
 		return -1;
 	char* header_parts[5];
@@ -129,12 +129,14 @@ int server_run(server_t* self, const char* argv[]) {
 	uint32_t info_header[3];
 	while (server_receive_info(self, info_header) > 0) {
 		int cant_parmeters = server_receive_header(self,info_header[2]);
-		if (info_header[0] != 0){
-			int mod = (info_header[2] + 16) % 8;
+		int mod = (info_header[2] + 16) % 8;
+		if (mod != 0){
 			int padding = 8 - mod;
 			char zeros[8];
 			if (server_recv_message(self,zeros, padding) == -1)
 				return -1;
+		}
+		if (info_header[0] != 0){
 			if (server_receive_body(self,info_header[0], cant_parmeters) == -1)
 				return -1;
 		}
