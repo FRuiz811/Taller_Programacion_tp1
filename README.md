@@ -1,4 +1,4 @@
-# Informe del Trabajo Práctico 0
+# Informe del Trabajo Práctico 1
 ### Alumno: Francisco Ruiz. Padrón:99429
 ### Link: https://github.com/FRuiz811/tp1.git
 
@@ -118,16 +118,25 @@ Al intentar ejecutar las normas de codificación, me surgió el siguiente error:
 
 ![Error Normas Codificación](img/ErrorNormas.png)
 
-Este error no fue corregido debido a que la recomendación que se da con las 
-normas es el uso de una función thread safety, lo cual a fines del trabajo 
-práctico actual, es totalmente irrelevante ya que no estamos trabajando con 
-threads. Por otro lado, la solución que nos suguieren las normas es el uso de 
-la función strtok_r que como se puede ver a continuación no pertenece al 
-standard C99 que era una de las restricciones que teniamos a la hora de 
-resolver el trabajo práctico.
+Este error me obligó a desarrollar la función _split_ para poder cumplir las 
+reglas cppflint, reemplazando de esta manera la función utilizada en un 
+principio que era strtok.
 
-![strtok](img/Strtok.png)
+### Longitud de Funciones
 
-La decisión tomada fue dejar strtok que si forma parte del standard C99, y que 
-a fines de la resolución actual, es muy útil y por ahora, no nos interesa el 
-trabajo con threads.
+Si bien se pedía que las funciones no superasen las 20 línea, en algunas no 
+pude respetar esa regla debido a que no vi como modularizar aún más las 
+mismas. Por otro lado, los controles de errores y las estructuras de control   
+(switch case) de algunas funciones hacen que la extensión de estas sobrepase 
+facilmente las 20 líneas. Aquí voy a explicar aquellas que sobrepase de 
+sobremanera las 20 líneas:
+
+
++ protocol_encode_message: esta función es la encarga de despachar cada parte 
+del mensaje a la función que corresponda para que sea encodeado de la manera 
+correcta. Su tarea principal es dividir correctamente el mensaje recibido como 
+parámetro y llamar a las funciones que le dan el formato al protocolo. Hace 
+las veces de un "dispatcher", para luego devolver el mensaje encodeado según 
+las reglas del protocolo D-Bus.
+
++ protocol_decode_header: En este caso, más de la mitad de las líneas se las lleva la estructura de control (switch case). Es una función muy simple que solamente decodifica el mensaje recibido a medida que lo va leyendo.

@@ -2,6 +2,7 @@
 #include <string.h>
 #include "common_dynamic_buffer.h"
 #include "common_endianutils.h"
+#include <stdio.h>
 
 int protocol_create(protocol_t* self) {
 	self->message = buffer_create(0);
@@ -64,6 +65,22 @@ static void _split_method_parameters(char* string_to_split, uint32_t length,
 	*parameters = limit_method;
 	string_to_split[length] = '\0';
 	*method = string_to_split;
+	return;
+}
+
+//Recibe en el parametro str el mensaje a dividir segun el delim indicado.
+//Devuelve en str, el string hasta el delimitador y lo reemplaza por \0.
+//El resto, es devuelto en el parametro rest, en caso de que no exista 
+//resto, rest apuntará a un \0
+static void _split(char* str, char delim, char** rest) {
+	char* position = strchr(str, delim);
+	if (position != NULL) {
+		int pos = position - str;
+		str[pos] = '\0';
+		*rest	= position+1;
+	} else {
+		*rest = strchr(str, '\0');
+	}
 	return;
 }
 
@@ -239,30 +256,26 @@ int protocol_encode_message(protocol_t* self, char* message,
 														uint32_t length, uint8_t** encoded) {
 	if (protocol_restart(self) != 0)
 		return -1;
-	char *message_splited[4];
-	message_splited[0] = strtok(message, " ");
+	char* rest = "";
+	_split(message,' ', &rest);
 	int i = 0;
 	char *method, *parameters = NULL;
 	int error = _build_header(self);
 	if(error != 0)
 		return -1;
-	while (message_splited[i] != NULL) {
+	while (i < 4) {
 		switch (i) {
 			case 0 :
-				error =_destiny_encode(self, message_splited[i],
-															 strlen(message_splited[i]));
+				error =_destiny_encode(self, message, strlen(message));
 				break;
 			 case 1 :
-				error = _path_encode(self, message_splited[i],
-														 strlen(message_splited[i]));
+				error = _path_encode(self, message, strlen(message));
 				break;
 			case 2 :
-				error = _interface_encode(self, message_splited[i],
-																  strlen(message_splited[i]));	
+				error = _interface_encode(self, message, strlen(message));	
 				break;
 			case 3 :
-				_split_method_parameters(message_splited[i],
-													strlen(message_splited[i]), &method, &parameters);
+				_split_method_parameters(message, strlen(message), &method, &parameters);
 				error = _method_encode(self, method, strlen(method));
 				if (*parameters != '\0') {
 					_aligment(self);
@@ -277,10 +290,11 @@ int protocol_encode_message(protocol_t* self, char* message,
 		i++;	
 		if (error != 0)
 			return -1;
+		message = rest;
 		if (i == 3)
-			message_splited[i] = strtok(NULL,")");
+			_split(message,')', &rest);
 		else
-			message_splited[i] = strtok(NULL," ");
+			_split(message,' ', &rest);
 	}
 
 	int length_msg = protocol_get_message_encoded(self, encoded);

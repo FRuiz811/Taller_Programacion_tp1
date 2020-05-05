@@ -1,6 +1,5 @@
 #ifndef COMMON_PROTOCOL_H
 #define COMMON_PROTOCOL_H
-#include <stdio.h>
 #include <stdint.h>
 #include "common_dynamic_buffer.h"
 
