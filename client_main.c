@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include "client.h"
-#include <string.h>
 
 int main(int argc, const char* argv[]) {
   if (argc < 3 || argc > 4) {

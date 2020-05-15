@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include "server.h"
-#include <string.h>
 
 int main(int argc, const char* argv[]){
 	if (argc != 2) {

@@ -1,10 +1,8 @@
 #include "client.h"
-#include <stdio.h>
 #include <sys/socket.h>
 #include <string.h>
-#include <stdbool.h>
-#include "common_dynamic_buffer.h"
 #include <stdint.h>
+#include "common_dynamic_buffer.h"
 
 #define BUFFER_SIZE 32
 

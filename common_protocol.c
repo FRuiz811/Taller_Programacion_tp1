@@ -1,8 +1,9 @@
 #include "common_protocol.h"
+#include <stdio.h>
 #include <string.h>
 #include "common_dynamic_buffer.h"
 #include "common_endianutils.h"
-#include <stdio.h>
+
 
 int protocol_create(protocol_t* self) {
 	self->message = buffer_create(0);
