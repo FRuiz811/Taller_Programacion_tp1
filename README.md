@@ -139,4 +139,28 @@ parámetro y llamar a las funciones que le dan el formato al protocolo. Hace
 las veces de un "dispatcher", para luego devolver el mensaje encodeado según 
 las reglas del protocolo D-Bus.
 
-+ protocol_decode_header: En este caso, más de la mitad de las líneas se las lleva la estructura de control (switch case). Es una función muy simple que solamente decodifica el mensaje recibido a medida que lo va leyendo.
++ protocol_decode_header: En este caso, más de la mitad de las líneas se las 
+lleva la estructura de control (switch case). Es una función muy simple que 
+solamente decodifica el mensaje recibido a medida que lo va leyendo.
+
+## Correcciones para Segunda Entrega
+
+Para la segunda entrega se pidieron corregir 3 cosas:
+
++ Uso de constantes y defines: esto se envidenció mucho en la parte del 
+protocolo, donde se definieron constantes para cada tipo de parámetro y el 
+tipo de dato del mismo. En otra parte que se aplicaron estas correcciones fue 
+en el servidor, donde se definió del buffer de lectura y del máximo padding 
+posible.
+
++ Limpiar Headers inutilizados: en algunos archivos, habían quedado header que 
+fueron incluídos con algún propósito a lo largo del desarrollo pero que a la 
+hora de la entrega final, no tenían ningún sentido. Por otro lado, había 
+librerias que se incluían tanto en el .h como en el .c, en aquellos casos en 
+los que fue posible, se dejó la librería en el .c para evitar incluír 
+librerias innecesarias. 
+
++ Refactor de la función protocol_encode_message: se generó una función 
+privada llamada encode_dispatch, que es la encargada de distribuir cada parte 
+del mensaje a la función que corresponda para que sea encodeado de la manera 
+correcta. Ahora protocol_encode_message se encarga solamente de dividir el mensaje recibido y devolverlo encodeado junto con su longitud.  
