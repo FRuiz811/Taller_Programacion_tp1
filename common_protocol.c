@@ -267,7 +267,7 @@ static int protocol_get_message_encoded(protocol_t* self, uint8_t** message) {
 	return length_msg;
 }
 
-static int encode_dispach(protocol_t* self, char* message, int part) {
+static int encode_dispatch(protocol_t* self, char* message, int part) {
 	int error = 0;
 	char *method, *parameters = NULL;
 	switch (part) {
@@ -307,7 +307,7 @@ int protocol_encode_message(protocol_t* self, char* message,
 	if(error != 0)
 		return -1;
 	while (i < 4) {
-		error = encode_dispach(self, message, i);
+		error = encode_dispatch(self, message, i);
 		i++;	
 		if (error != 0)
 			return -1;
