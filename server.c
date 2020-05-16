@@ -4,6 +4,8 @@
 
 #define SOCKET_WAITING 20
 #define MSG_RECV "OK\n"
+#define INFO_HEADER_SIZE 16
+#define MAX_PADDING 8
 
 int server_create(server_t* self) {
 	socket_t socket;
@@ -55,12 +57,12 @@ int server_recv_message(server_t* self, void* buffer, uint32_t length) {
 //Devuelve la cantidad de bytes recibidos o -1 en caso de que se cierre
 //la comunicación
 static int server_receive_info(server_t* self, uint32_t info_header[]){
-	uint8_t info_message_received[16];
+	uint8_t info_message_received[INFO_HEADER_SIZE];
 	int bytes_received = server_recv_message(self,&info_message_received, 
-											 16);
+											 INFO_HEADER_SIZE);
 	if (bytes_received > 0) {
 		protocol_get_info_message(&self->protocol, info_message_received,
-								  16, info_header);
+								  INFO_HEADER_SIZE, info_header);
 		printf("* Id: 0x%08x\n", info_header[1]);
 	}
 	return bytes_received;
@@ -128,10 +130,10 @@ int server_run(server_t* self, const char* argv[]) {
 	uint32_t info_header[3];
 	while (server_receive_info(self, info_header) > 0) {
 		int cant_parmeters = server_receive_header(self,info_header[2]);
-		int mod = (info_header[2] + 16) % 8;
+		int mod = (info_header[2] + INFO_HEADER_SIZE) % MAX_PADDING;
 		if (mod != 0){
-			int padding = 8 - mod;
-			char zeros[8];
+			int padding = MAX_PADDING - mod;
+			char zeros[MAX_PADDING];
 			if (server_recv_message(self,zeros, padding) == -1)
 				return -1;
 		}
@@ -140,7 +142,7 @@ int server_run(server_t* self, const char* argv[]) {
 				return -1;
 		}
 		printf("\n");
-		if (server_send_message(self, MSG_RECV, 3) == -1)
+		if (server_send_message(self, MSG_RECV, strlen(MSG_RECV)) == -1)
 			return -1;
 	}
 	return 0;
